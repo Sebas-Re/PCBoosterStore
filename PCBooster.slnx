@@ -1,2 +1,10 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PCBooster.Datos/PCBooster.Datos.csproj" />
+    <Project Path="src/PCBooster.Dominio/PCBooster.Dominio.csproj" />
+    <Project Path="src/PCBooster.Negocio/PCBooster.Negocio.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PCBooster.Tests/PCBooster.Tests.csproj" />
+  </Folder>
 </Solution>

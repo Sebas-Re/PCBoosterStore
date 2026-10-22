@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\PCBooster.Dominio\PCBooster.Dominio.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Los scripts viajan dentro del .dll: la base se crea sin archivos sueltos. -->
+    <EmbeddedResource Include="Sql\*.sql" LogicalName="Sql.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

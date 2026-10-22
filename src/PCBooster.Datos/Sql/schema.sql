@@ -1,7 +1,7 @@
 -- Schema SQLite de BD_Pcbooster_store.
 -- Port de Legacy/Scripts/sqlserver/Script DB_PCbooster_Store.sql.
--- Los tipos bit/money/date se declaran así a propósito: System.Data.SQLite los
--- mapea a Boolean/Decimal/DateTime, igual que SqlClient con SQL Server.
+-- Los tipos bit/money/date vienen de la versión SQL Server; EF Core los mapea a
+-- bool/decimal/DateOnly desde TiendaContext.
 -- COLLATE NOCASE replica la collation case-insensitive de SQL Server en las
 -- columnas que se comparan por igualdad desde la app.
 
@@ -49,8 +49,7 @@ create table Ventas(
 	IdUsuario_ve bigint not null,
 	TotalVenta_ve money not null default 0,
 	FechaVenta_ve datetime not null default (datetime('now', 'localtime')),
-	Metodo_de_Pago_ve bit not null,
-	Codigo_Seguridad_ve int not null,
+	Metodo_de_Pago_ve bit not null, -- 1 = crédito, 0 = débito
 	constraint CK_Ventas_TotalVentas check (TotalVenta_ve >= 0),
 	constraint UQ_Ventas_Usuario unique (IdVentas_ve, IdUsuario_ve),
 	constraint FK_Ventas_Cuentas_Cod foreign key (IdUsuario_ve) references Usuarios(IdUsuario_us)
@@ -71,15 +70,17 @@ create table Detalle_Ventas(
 	constraint FK_DetalleVentas_Articulos foreign key (CodArticulo_dv) references Articulos(CodArticulo_ar)
 );
 
+-- El código de seguridad no se guarda (desde la versión 5): una tienda no debe
+-- almacenarlo, y la compra no lo necesita.
 create table Tarjetas(
+	IdTarjeta_t integer primary key autoincrement,
 	Id_TarjetaUsuario_t bigint not null,
 	Titular_Tarjeta_t varchar(50) not null,
 	Nombre_Tarjeta_t varchar(20) not null,
 	Tipo_Tarjeta_t bit not null,
 	Num_Tarjeta_t bigint not null,
 	Fecha_Vencimiento_t date not null,
-	Codigo_Seguridad_t int not null,
-	constraint PK_Tarjetas primary key (Id_TarjetaUsuario_t, Codigo_Seguridad_t),
+	constraint UQ_Tarjetas_Numero unique (Id_TarjetaUsuario_t, Num_Tarjeta_t),
 	constraint FK_Tarjetas_Usuarios foreign key (Id_TarjetaUsuario_t) references Usuarios(IdUsuario_us)
 );
 
