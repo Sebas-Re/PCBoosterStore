@@ -1,0 +1,75 @@
+@page
+@model MisComprasModel
+@{
+    ViewData["Title"] = "Mis compras";
+}
+
+<h1 class="h3 mb-3">Mis compras</h1>
+
+@if (Model.Ventas.Count == 0)
+{
+    <div class="card text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-bag display-6 text-body-tertiary"></i>
+            <p class="mt-3 mb-3">Todavía no realizaste ninguna compra.</p>
+            <a class="btn btn-primary" asp-page="/Catalogo">Ir al catálogo</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-body table-responsive">
+                    <table class="table table-hover mb-0" id="compras">
+                        <thead><tr><th>N°</th><th>Fecha</th><th class="text-end">Total</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (Venta venta in Model.Ventas)
+                            {
+                                <tr class="@(venta.Id == Model.Detalle?.Id ? "table-primary" : "")">
+                                    <td>@venta.Id</td>
+                                    <td>@venta.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="text-end text-nowrap">@venta.Total.ToString("C0")</td>
+                                    <td class="text-end"><a class="btn btn-sm btn-outline-primary" asp-route-compra="@venta.Id">Ver detalle</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-body" id="detalleCompra">
+                    @if (Model.Detalle == null)
+                    {
+                        <span class="h6 d-block mb-3">Detalle de la compra</span>
+                        <span class="text-body-secondary">Elegí una compra para ver qué productos incluía.</span>
+                    }
+                    else
+                    {
+                        <span class="h6 d-block mb-3">Detalle de la compra N° @Model.Detalle.Id</span>
+                        <table class="table mb-0">
+                            <thead><tr><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Precio</th></tr></thead>
+                            <tbody>
+                                @foreach (DetalleVenta detalle in Model.Detalle.Detalles)
+                                {
+                                    <tr>
+                                        <td>@detalle.Articulo?.Descripcion</td>
+                                        <td class="text-center">@detalle.Cantidad</td>
+                                        <td class="text-end text-nowrap">@detalle.PrecioUnitario.ToString("C0")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (Model.Detalle.Detalles.FirstOrDefault() is { } primero)
+                        {
+                            <span class="d-block small text-body-secondary mt-3">Entrega en @primero.DireccionEntrega · Recibe: @primero.Contacto</span>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

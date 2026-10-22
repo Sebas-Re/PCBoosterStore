@@ -1,0 +1,41 @@
+@{
+    Layout = "_Layout";
+    string pagina = ViewContext.RouteData.Values["page"] as string ?? "";
+    string Clase(string ruta) => (ruta == "/Admin/Index" ? pagina == ruta : pagina.StartsWith(ruta)) ? "nav-link active" : "nav-link";
+}
+
+@section Navegacion {
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" asp-page="/Admin/Index">
+                <i class="bi bi-cpu-fill"></i> PC Booster <span class="badge text-bg-light text-primary ms-1">Admin</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuAdmin"
+                    aria-controls="menuAdmin" aria-expanded="false" aria-label="Abrir menú">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menuAdmin">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="@Clase("/Admin/Index")" asp-page="/Admin/Index"><i class="bi bi-speedometer2"></i> Panel</a></li>
+                    <li class="nav-item"><a class="@Clase("/Admin/Articulos")" asp-page="/Admin/Articulos/Index"><i class="bi bi-box-seam"></i> Artículos</a></li>
+                    <li class="nav-item"><a class="@Clase("/Admin/Categorias")" asp-page="/Admin/Categorias"><i class="bi bi-tags"></i> Categorías</a></li>
+                    <li class="nav-item"><a class="@Clase("/Admin/Usuarios")" asp-page="/Admin/Usuarios/Index"><i class="bi bi-people"></i> Usuarios</a></li>
+                    <li class="nav-item"><a class="@Clase("/Admin/Reportes")" asp-page="/Admin/Reportes"><i class="bi bi-graph-up"></i> Reportes</a></li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <a class="btn btn-sm btn-outline-light" asp-page="/Catalogo"><i class="bi bi-shop"></i> Ver tienda</a>
+                    <span class="navbar-text text-light d-none d-lg-inline"><i class="bi bi-person-badge"></i> @User.Identity?.Name</span>
+                    <partial name="_Salir" model='"btn btn-sm btn-light"' />
+                </div>
+            </div>
+        </div>
+    </nav>
+}
+
+@RenderBody()
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.js"></script>
+    <script src="~/js/graficos.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+}

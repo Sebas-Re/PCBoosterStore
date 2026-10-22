@@ -1,0 +1,6 @@
+@model string
+@* Cerrar sesión es un POST con token antiforgery: un link de otro sitio no puede desloguear a nadie.
+   El modelo es la clase CSS del botón. *@
+<form method="post" asp-page="/Cuenta/Salir" class="d-inline">
+    <button type="submit" class="@Model" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i> Salir</button>
+</form>

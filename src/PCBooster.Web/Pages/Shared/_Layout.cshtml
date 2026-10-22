@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewData["Title"] is string titulo ? titulo + " · PC Booster Store" : "PC Booster Store")</title>
+    <link href="~/lib/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+</head>
+<body class="d-flex flex-column min-vh-100" data-imagen-respaldo="@Url.Content("~/img/sin-imagen.svg")">
+    @await RenderSectionAsync("Navegacion", required: false)
+
+    <main class="container py-4 flex-grow-1">
+        <partial name="_Mensajes" />
+        @RenderBody()
+    </main>
+
+    <footer class="py-3 border-top bg-white text-center text-body-secondary small">
+        PC Booster Store &middot; ASP.NET Core + EF Core &middot;
+        <a class="link-secondary" href="https://github.com/Sebas-Re/PCBoosterStore">código en GitHub</a>
+    </footer>
+
+    <script src="~/lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

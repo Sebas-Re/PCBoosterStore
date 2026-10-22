@@ -1,0 +1,54 @@
+@page
+@model PCBooster.Web.Pages.Cuenta.RegistroModel
+@{
+    ViewData["Title"] = "Crear cuenta";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center align-items-center portada">
+    <div class="col-md-8 col-lg-6">
+        <div class="text-center mb-4">
+            <div class="marca"><i class="bi bi-cpu-fill text-primary"></i> PC Booster Store</div>
+            <p class="text-body-secondary mb-0">Sumate a la comunidad Booster</p>
+        </div>
+        <div class="card">
+            <div class="card-body p-4">
+                <h1 class="h5 mb-3">Crear cuenta</h1>
+                <form method="post">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="Datos.Nombre" class="form-label">Nombre de usuario</label>
+                            <input asp-for="Datos.Nombre" class="form-control" maxlength="10" autocomplete="username" required />
+                            <span asp-validation-for="Datos.Nombre" class="validador"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Datos.Email" class="form-label">E-mail</label>
+                            <input asp-for="Datos.Email" type="email" class="form-control" maxlength="30" autocomplete="email" required />
+                            <span asp-validation-for="Datos.Email" class="validador"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Datos.Contraseña" class="form-label">Contraseña</label>
+                            <input asp-for="Datos.Contraseña" class="form-control" minlength="6" maxlength="64" autocomplete="new-password" required />
+                            <div class="form-text">Entre 6 y 64 caracteres.</div>
+                            <span asp-validation-for="Datos.Contraseña" class="validador"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Datos.RepetirContraseña" class="form-label">Repetir contraseña</label>
+                            <input asp-for="Datos.RepetirContraseña" class="form-control" maxlength="64" autocomplete="new-password" required />
+                            <span asp-validation-for="Datos.RepetirContraseña" class="validador"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Datos.Telefono" class="form-label">Teléfono (opcional)</label>
+                            <input asp-for="Datos.Telefono" type="tel" class="form-control" maxlength="15" inputmode="numeric" />
+                            <span asp-validation-for="Datos.Telefono" class="validador"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-4" id="btnRegistrarse">Crear cuenta</button>
+                </form>
+            </div>
+            <div class="card-footer bg-white text-center py-3">
+                ¿Ya tenés cuenta? <a asp-page="/Index">Iniciá sesión</a>
+            </div>
+        </div>
+    </div>
+</div>

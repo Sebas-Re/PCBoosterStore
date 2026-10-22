@@ -1,0 +1,47 @@
+@inject CarritoSesion CarritoSesion
+@{
+    Layout = "_Layout";
+    string pagina = ViewContext.RouteData.Values["page"] as string ?? "";
+    string Clase(string ruta) => pagina.StartsWith(ruta) ? "nav-link active" : "nav-link";
+    int unidades = CarritoSesion.Obtener().CantidadUnidades;
+}
+
+@section Navegacion {
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" asp-page="/Catalogo"><i class="bi bi-cpu-fill text-primary"></i> PC Booster</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuTienda"
+                    aria-controls="menuTienda" aria-expanded="false" aria-label="Abrir menú">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menuTienda">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="@Clase("/Catalogo")" asp-page="/Catalogo"><i class="bi bi-grid"></i> Catálogo</a></li>
+                    <li class="nav-item"><a class="@Clase("/MisCompras")" asp-page="/MisCompras"><i class="bi bi-bag-check"></i> Mis compras</a></li>
+                    <li class="nav-item"><a class="@Clase("/MiCuenta")" asp-page="/MiCuenta"><i class="bi bi-person"></i> Mi cuenta</a></li>
+                    @if (User.IsInRole(Roles.Admin))
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-page="/Admin/Index"><i class="bi bi-speedometer2"></i> Administración</a></li>
+                    }
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <a class="btn btn-outline-light position-relative" asp-page="/Carrito" id="linkCarrito">
+                        <i class="bi bi-cart3"></i> Carrito
+                        @if (unidades > 0)
+                        {
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" id="cantidadCarrito">@unidades</span>
+                        }
+                    </a>
+                    <span class="navbar-text text-light d-none d-lg-inline"><i class="bi bi-person-circle"></i> @User.Identity?.Name</span>
+                    <partial name="_Salir" model='"btn btn-sm btn-outline-light"' />
+                </div>
+            </div>
+        </div>
+    </nav>
+}
+
+@RenderBody()
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

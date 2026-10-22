@@ -1,0 +1,15 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = Model.Titulo;
+    Layout = "_Layout";
+}
+
+<div class="card text-center py-5 mx-auto" style="max-width: 32rem">
+    <div class="card-body">
+        <i class="bi bi-exclamation-octagon display-6 text-body-tertiary"></i>
+        <h1 class="h4 mt-3">@Model.Titulo</h1>
+        <p class="text-body-secondary">Si el problema sigue, volvé a intentarlo en unos minutos.</p>
+        <a class="btn btn-primary" asp-page="/Catalogo">Ir al catálogo</a>
+    </div>
+</div>

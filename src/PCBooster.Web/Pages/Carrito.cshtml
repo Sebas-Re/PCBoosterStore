@@ -1,0 +1,148 @@
+@page
+@model CarritoModel
+@{
+    ViewData["Title"] = "Carrito";
+}
+
+<h1 class="h3 mb-3">Tu carrito</h1>
+
+@if (Model.Carrito.Vacio)
+{
+    <div class="card text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-cart-x display-6 text-body-tertiary"></i>
+            <p class="mt-3 mb-3">Tu carrito está vacío.</p>
+            <a class="btn btn-primary" asp-page="/Catalogo">Ir al catálogo</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card mb-4">
+                <div class="card-body table-responsive">
+                    <table class="table mb-0" id="itemsCarrito">
+                        <thead>
+                            <tr><th>Producto</th><th>Precio</th><th class="text-center">Cant.</th><th class="text-end">Subtotal</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (ItemCarrito item in Model.Carrito.Items)
+                            {
+                                <tr>
+                                    <td>@item.Descripcion</td>
+                                    <td class="text-nowrap">@item.PrecioUnitario.ToString("C0")</td>
+                                    <td class="text-center">@item.Cantidad</td>
+                                    <td class="text-end text-nowrap">@item.Subtotal.ToString("C0")</td>
+                                    <td class="text-end">
+                                        <form method="post" asp-page-handler="Quitar">
+                                            <input type="hidden" name="codigo" value="@item.Codigo" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Quitar del carrito"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white d-flex flex-wrap gap-2 justify-content-between align-items-center py-3">
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-secondary" asp-page="/Catalogo"><i class="bi bi-arrow-left"></i> Seguir comprando</a>
+                        <form method="post" asp-page-handler="Vaciar" data-confirmar="¿Vaciar el carrito?">
+                            <button type="submit" class="btn btn-outline-danger" id="btnVaciar">Vaciar carrito</button>
+                        </form>
+                    </div>
+                    <div class="fs-5">Total: <span class="fw-bold" id="totalCarrito">@Model.Carrito.Total.ToString("C0")</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h6 mb-3"><i class="bi bi-credit-card"></i> Agregar una tarjeta</h2>
+                    <form method="post" asp-page-handler="GuardarTarjeta" class="row g-3">
+                        <div class="col-sm-6">
+                            <label for="Tarjeta_Numero" class="form-label">Número de tarjeta</label>
+                            <input id="Tarjeta_Numero" name="Tarjeta.Numero" value="@Model.NuevaTarjeta.Numero" class="form-control" maxlength="19" inputmode="numeric" autocomplete="cc-number" placeholder="Sin espacios" required />
+                            <span class="validador">@Html.ValidationMessage("Tarjeta.Numero")</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="Tarjeta_Titular" class="form-label">Titular</label>
+                            <input id="Tarjeta_Titular" name="Tarjeta.Titular" value="@Model.NuevaTarjeta.Titular" class="form-control" maxlength="50" autocomplete="cc-name" required />
+                            <span class="validador">@Html.ValidationMessage("Tarjeta.Titular")</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="Tarjeta_Nombre" class="form-label">Marca (Visa, Mastercard...)</label>
+                            <input id="Tarjeta_Nombre" name="Tarjeta.Nombre" value="@Model.NuevaTarjeta.Nombre" class="form-control" maxlength="20" required />
+                            <span class="validador">@Html.ValidationMessage("Tarjeta.Nombre")</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="form-label d-block">Tipo</span>
+                            <div class="d-flex gap-3 pt-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="Tarjeta.EsCredito" id="tipoDebito" value="false" checked="@(!Model.NuevaTarjeta.EsCredito)" />
+                                    <label class="form-check-label" for="tipoDebito">Débito</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="Tarjeta.EsCredito" id="tipoCredito" value="true" checked="@Model.NuevaTarjeta.EsCredito" />
+                                    <label class="form-check-label" for="tipoCredito">Crédito</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label for="Tarjeta_Mes" class="form-label">Mes venc.</label>
+                            <input id="Tarjeta_Mes" name="Tarjeta.Mes" value="@Model.NuevaTarjeta.Mes" type="number" min="1" max="12" class="form-control" placeholder="MM" required />
+                            <span class="validador">@Html.ValidationMessage("Tarjeta.Mes")</span>
+                        </div>
+                        <div class="col-6">
+                            <label for="Tarjeta_Año" class="form-label">Año venc.</label>
+                            <input id="Tarjeta_Año" name="Tarjeta.Año" value="@Model.NuevaTarjeta.Año" type="number" min="2000" max="2099" class="form-control" placeholder="AAAA" required />
+                            <span class="validador">@Html.ValidationMessage("Tarjeta.Año")</span>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-text mb-2"><i class="bi bi-shield-lock"></i> No pedimos ni guardamos el código de seguridad.</div>
+                            <button type="submit" class="btn btn-outline-primary" id="btnGuardarTarjeta">Guardar tarjeta</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h6 mb-3"><i class="bi bi-bag-check"></i> Finalizar compra</h2>
+                    <form method="post" asp-page-handler="Confirmar">
+                        <div class="mb-3">
+                            <label for="Compra_TarjetaId" class="form-label">Medio de pago</label>
+                            <select id="Compra_TarjetaId" name="Compra.TarjetaId" class="form-select">
+                                <option value="">Elegí una tarjeta</option>
+                                @foreach (Tarjeta tarjeta in Model.Tarjetas)
+                                {
+                                    <option value="@tarjeta.Id" selected="@(tarjeta.Id == Model.Compra.TarjetaId)">
+                                        @tarjeta.Nombre terminada en @tarjeta.UltimosDigitos (@(tarjeta.EsCredito ? "Crédito" : "Débito"))
+                                    </option>
+                                }
+                            </select>
+                            @if (Model.Tarjetas.Count == 0)
+                            {
+                                <div class="form-text">Todavía no tenés tarjetas: agregá una en el formulario de la izquierda.</div>
+                            }
+                            <span class="validador">@Html.ValidationMessage("Compra.TarjetaId")</span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Compra_Direccion" class="form-label">Dirección de entrega</label>
+                            <input id="Compra_Direccion" name="Compra.Direccion" value="@Model.Compra.Direccion" class="form-control" maxlength="50" autocomplete="street-address" required />
+                            <span class="validador">@Html.ValidationMessage("Compra.Direccion")</span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Compra_Contacto" class="form-label">¿Quién recibe?</label>
+                            <input id="Compra_Contacto" name="Compra.Contacto" value="@Model.Compra.Contacto" class="form-control" maxlength="20" required />
+                            <span class="validador">@Html.ValidationMessage("Compra.Contacto")</span>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 btn-lg" id="btnConfirmar">Confirmar compra</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

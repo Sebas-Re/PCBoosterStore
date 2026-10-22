@@ -1,0 +1,192 @@
+@page
+@model CatalogoModel
+@{
+    ViewData["Title"] = "Catálogo";
+    bool hayBusqueda = !string.IsNullOrEmpty(Model.Q);
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div>
+        <h1 class="h3 mb-0">Catálogo</h1>
+        <p class="text-body-secondary mb-0">Elegí las piezas para potenciar tu PC</p>
+    </div>
+    <form method="get" class="input-group buscador" style="max-width: 420px" role="search">
+        <input type="search" name="q" value="@Model.Q" class="form-control" placeholder="Buscar productos..." aria-label="Buscar productos" />
+        <button type="submit" class="btn btn-primary" title="Buscar"><i class="bi bi-search"></i></button>
+    </form>
+</div>
+
+<ul class="nav nav-pills flex-wrap gap-1 mb-4">
+    <li class="nav-item"><a class="nav-link @(Model.Cat == null && !hayBusqueda ? "active" : "")" asp-page="/Catalogo">Todas</a></li>
+    @foreach (Categoria categoria in Model.Categorias)
+    {
+        <li class="nav-item"><a class="nav-link @(Model.Cat == categoria.Id && !hayBusqueda ? "active" : "")" asp-page="/Catalogo" asp-route-cat="@categoria.Id">@categoria.Descripcion</a></li>
+    }
+</ul>
+
+<div class="row g-4">
+    <div class="col-lg-9">
+        <span class="d-block text-body-secondary small mb-2" id="resultado">
+            @(hayBusqueda ? $"Resultados para \"{Model.Q}\": {Model.Articulos.Total}" : $"{Model.Articulos.Total} productos")
+        </span>
+
+        @if (Model.Articulos.Total == 0)
+        {
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-search display-6 text-body-tertiary"></i>
+                    <p class="mt-3 mb-3">No encontramos productos con ese criterio.</p>
+                    <a class="btn btn-outline-primary" asp-page="/Catalogo">Ver todo el catálogo</a>
+                </div>
+            </div>
+        }
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-3">
+            @foreach (Articulo articulo in Model.Articulos.Items)
+            {
+                string idModal = CatalogoModel.IdHtml("detalle", articulo.Codigo);
+                string idTitulo = CatalogoModel.IdHtml("titulo", articulo.Codigo);
+                bool hayStock = articulo.Stock > 0;
+                <div class="col">
+                    <div class="card h-100 producto">
+                        <a href="#" class="text-reset text-decoration-none" data-bs-toggle="modal" data-bs-target="#@idModal">
+                            <img class="card-img-top imagen" src="@Url.Content(articulo.Imagen ?? "~/img/sin-imagen.svg")" alt="@articulo.Descripcion" loading="lazy" data-respaldo />
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <div class="small text-body-secondary mb-1">@articulo.Marca</div>
+                            <h2 class="h6 card-title descripcion">
+                                <a href="#" class="text-reset text-decoration-none" data-bs-toggle="modal" data-bs-target="#@idModal">@articulo.Descripcion</a>
+                            </h2>
+                            <div class="d-flex align-items-baseline justify-content-between mt-auto">
+                                <span class="fs-5 fw-semibold">@articulo.Precio.ToString("C0")</span>
+                                <span class="badge @(hayStock ? "text-bg-light" : "text-bg-danger")">@(hayStock ? $"Stock: {articulo.Stock}" : "Sin stock")</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0 pt-0 pb-3 d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#@idModal" title="Ver detalle">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                            <form method="post" asp-page-handler="Agregar" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@Model.Articulos.Numero" class="flex-grow-1 d-flex">
+                                <input type="hidden" name="codigo" value="@articulo.Codigo" />
+                                <button type="submit" class="btn btn-primary flex-grow-1" title="Agregar al carrito" disabled="@(!hayStock)">
+                                    <i class="bi bi-cart-plus"></i> Agregar al carrito
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                @* Detalle del producto: un modal por tarjeta. *@
+                <div class="modal fade" id="@idModal" tabindex="-1" aria-labelledby="@idTitulo" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header border-0 pb-0">
+                                <span class="badge text-bg-light">@articulo.Categoria?.Descripcion</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body pt-2">
+                                <div class="row g-4">
+                                    <div class="col-md-5">
+                                        <div class="border rounded-3 p-3 bg-white text-center">
+                                            <img class="img-fluid detalle-imagen" src="@Url.Content(articulo.Imagen ?? "~/img/sin-imagen.svg")" alt="@articulo.Descripcion" loading="lazy" data-respaldo />
+                                        </div>
+                                        <ul class="list-unstyled small text-body-secondary mt-3 mb-0">
+                                            <li class="mb-1"><i class="bi bi-shield-check text-success"></i> Garantía oficial: @CatalogoModel.TextoGarantia(articulo.GarantiaMeses)</li>
+                                            <li class="mb-1"><i class="bi bi-truck text-primary"></i> Envío a todo el país</li>
+                                            <li><i class="bi bi-arrow-repeat text-primary"></i> 30 días para cambios</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="text-body-secondary small">@articulo.Marca &middot; Código @articulo.Codigo</div>
+                                        <h3 class="h4 mb-2" id="@idTitulo">@articulo.Descripcion</h3>
+                                        <div class="d-flex align-items-center gap-3 mb-3">
+                                            <span class="fs-3 fw-semibold">@articulo.Precio.ToString("C0")</span>
+                                            <span class="badge @(hayStock ? "text-bg-success" : "text-bg-danger")">@(hayStock ? $"{articulo.Stock} disponibles" : "Sin stock")</span>
+                                        </div>
+                                        <p class="mb-3">@articulo.DescripcionLarga</p>
+
+                                        <h4 class="h6">Especificaciones</h4>
+                                        <table class="table table-sm small mb-3">
+                                            <tbody>
+                                                @{ var especificaciones = articulo.ListaEspecificaciones(); }
+                                                @if (especificaciones.Count == 0)
+                                                {
+                                                    <tr><td>Consultá con nuestro equipo de ventas</td></tr>
+                                                }
+                                                @foreach (var (clave, valor) in especificaciones)
+                                                {
+                                                    <tr><th scope="row" class="text-body-secondary fw-normal w-50">@clave</th><td>@valor</td></tr>
+                                                }
+                                            </tbody>
+                                        </table>
+
+                                        @if (hayStock)
+                                        {
+                                            <form method="post" asp-page-handler="Agregar" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@Model.Articulos.Numero" class="d-flex gap-2">
+                                                <input type="hidden" name="codigo" value="@articulo.Codigo" />
+                                                <input type="number" name="cantidad" value="1" min="1" max="@Math.Min(articulo.Stock, 99)" class="form-control" style="width: 6rem" aria-label="Cantidad" />
+                                                <button type="submit" class="btn btn-primary flex-grow-1" title="Agregar la cantidad elegida">
+                                                    <i class="bi bi-cart-plus"></i> Agregar al carrito
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.Articulos.TotalPaginas > 1)
+        {
+            int actual = Model.Articulos.Numero, total = Model.Articulos.TotalPaginas;
+            <nav class="mt-4" aria-label="Páginas del catálogo">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(actual == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-page="/Catalogo" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@(actual - 1)" aria-label="Anterior">&laquo;</a>
+                    </li>
+                    @for (int i = 1; i <= total; i++)
+                    {
+                        <li class="page-item @(i == actual ? "active" : "")">
+                            <a class="page-link" asp-page="/Catalogo" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(actual == total ? "disabled" : "")">
+                        <a class="page-link" asp-page="/Catalogo" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@(actual + 1)" aria-label="Siguiente">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+
+    <div class="col-lg-3">
+        <div class="card sticky-lg-top resumen-carrito">
+            <div class="card-body">
+                <h2 class="h6 mb-3"><i class="bi bi-cart3"></i> Tu carrito</h2>
+                @if (Model.Carrito.Vacio)
+                {
+                    <div class="text-body-secondary small">Todavía no agregaste productos.</div>
+                }
+                else
+                {
+                    <ul class="list-unstyled small mb-3" id="resumenCarrito">
+                        @foreach (ItemCarrito item in Model.Carrito.Items)
+                        {
+                            <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
+                                <span>@item.Cantidad &times; @item.Descripcion</span>
+                                <span class="text-nowrap">@item.Subtotal.ToString("C0")</span>
+                            </li>
+                        }
+                    </ul>
+                    <div class="d-flex justify-content-between fw-semibold mb-3">
+                        <span>Total</span>
+                        <span>@Model.Carrito.Total.ToString("C0")</span>
+                    </div>
+                    <a class="btn btn-success w-100" asp-page="/Carrito">Ir a pagar</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

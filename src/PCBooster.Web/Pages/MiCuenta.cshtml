@@ -1,0 +1,83 @@
+@page
+@model MiCuentaModel
+@{
+    ViewData["Title"] = "Mi cuenta";
+}
+
+<h1 class="h3 mb-3">Mi cuenta</h1>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6 mb-3"><i class="bi bi-person"></i> Mis datos</h2>
+                <form method="post" asp-page-handler="Guardar" class="row g-3">
+                    <div class="col-sm-6">
+                        <label asp-for="Datos.Nombre" class="form-label">Nombre de usuario</label>
+                        <input asp-for="Datos.Nombre" class="form-control" maxlength="10" autocomplete="username" required />
+                        <span asp-validation-for="Datos.Nombre" class="validador"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="Datos.Email" class="form-label">E-mail</label>
+                        <input asp-for="Datos.Email" type="email" class="form-control" maxlength="30" required />
+                        <span asp-validation-for="Datos.Email" class="validador"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="Datos.Telefono" class="form-label">Teléfono</label>
+                        <input asp-for="Datos.Telefono" type="tel" class="form-control" maxlength="15" inputmode="numeric" />
+                        <span asp-validation-for="Datos.Telefono" class="validador"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="Datos.NuevaContraseña" class="form-label">Nueva contraseña</label>
+                        <input asp-for="Datos.NuevaContraseña" class="form-control" maxlength="64" autocomplete="new-password" />
+                        <div class="form-text">Dejala vacía para mantener la actual.</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="Datos.ContraseñaActual" class="form-label">Contraseña actual</label>
+                        <input asp-for="Datos.ContraseñaActual" class="form-control" maxlength="64" autocomplete="current-password" />
+                        <div class="form-text">Necesaria para cambiar el nombre, el e-mail o la contraseña.</div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h6 mb-3"><i class="bi bi-credit-card"></i> Mis tarjetas</h2>
+                @if (Model.Tarjetas.Count == 0)
+                {
+                    <span class="text-body-secondary">No tenés tarjetas guardadas. Podés agregar una desde el carrito.</span>
+                }
+                else
+                {
+                    <table class="table mb-0" id="tarjetas">
+                        <thead><tr><th>Tarjeta</th><th>Tipo</th><th>Vence</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (Tarjeta tarjeta in Model.Tarjetas)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@tarjeta.Nombre &bull;&bull;&bull;&bull; @tarjeta.UltimosDigitos</div>
+                                        <div class="small text-body-secondary">@tarjeta.Titular</div>
+                                    </td>
+                                    <td>@(tarjeta.EsCredito ? "Crédito" : "Débito")</td>
+                                    <td>@tarjeta.Vencimiento.ToString("MM/yyyy")</td>
+                                    <td class="text-end">
+                                        <form method="post" asp-page-handler="EliminarTarjeta" asp-route-id="@tarjeta.Id" data-confirmar="¿Eliminar esta tarjeta?">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar tarjeta"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>

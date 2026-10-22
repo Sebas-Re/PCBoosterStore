@@ -1,0 +1,8 @@
+@foreach (Mensaje mensaje in Mensajes.Leer(TempData))
+{
+    <div class="alert alert-@mensaje.ClaseBootstrap alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+        <i class="bi @mensaje.Icono"></i>
+        <div>@mensaje.Texto</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
