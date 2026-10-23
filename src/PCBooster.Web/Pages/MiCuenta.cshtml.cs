@@ -34,7 +34,7 @@ public class MiCuentaModel(UsuariosService usuarios, TarjetasService tarjetas) :
     public async Task OnGetAsync()
     {
         Usuario usuario = (await usuarios.ObtenerAsync(UsuarioId))!;
-        Datos = new Formulario { Nombre = usuario.Nombre, Email = usuario.Email, Telefono = usuario.Telefono == "Sin telefono" ? "" : usuario.Telefono };
+        Datos = new Formulario { Nombre = usuario.Nombre, Email = usuario.Email, Telefono = usuario.Telefono };
         Tarjetas = await tarjetas.ListarAsync(UsuarioId);
     }
 

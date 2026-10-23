@@ -12,7 +12,7 @@ public class Articulo
     public int Stock { get; set; }
     public decimal Precio { get; set; }
 
-    /* Ruta del sitio ("~/Imagenes_ar/...") o dirección http(s). */
+    /* Ruta del sitio ("/img/productos/...") o dirección http(s). */
     public string? Imagen { get; set; }
 
     /* Baja lógica: un artículo inactivo no se muestra ni se vende. */

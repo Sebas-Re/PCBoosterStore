@@ -70,7 +70,7 @@ public class AdminTests(SitioFixture sitio) : Pruebas(sitio)
         Pagina nuevo = await Navegador.Abrir("/Admin/Articulos/Editar");
         Pagina lista = await Navegador.Enviar(nuevo, "#btnGuardar", Campos(
             "Datos.Codigo", codigo, "Datos.Descripcion", "Monitor de prueba " + codigo, "Datos.CategoriaId", "8",
-            "Datos.Stock", "5", "Datos.Precio", "1500,50", "Datos.Imagen", "~/Imagenes_ar/SDD/sdd1.png",
+            "Datos.Stock", "5", "Datos.Precio", "1500,50", "Datos.Imagen", "/img/productos/sdd1.png",
             "Datos.Marca", "Marca E2E", "Datos.Especificaciones", "Tamaño: 27\"\r\nPanel: IPS"));
         Assert.Contains(lista.Alertas, a => a.Contains($"Artículo {codigo} agregado"));
 
@@ -100,7 +100,7 @@ public class AdminTests(SitioFixture sitio) : Pruebas(sitio)
 
         Assert.Contains(pagina.Alertas, a => a.Contains("La imagen tiene que ser"));
         Assert.DoesNotContain("onerror=\"alert", pagina.Html); // el valor reenviado sale encodeado
-        Assert.Contains("~/Imagenes_ar/", (await Navegador.Abrir("/Admin/Articulos/Editar/hdd8")).Elemento("#Datos_Imagen").GetAttribute("value"));
+        Assert.Equal("/img/productos/hdd8.png", (await Navegador.Abrir("/Admin/Articulos/Editar/hdd8")).Elemento("#Datos_Imagen").GetAttribute("value"));
     }
 
     [Fact]

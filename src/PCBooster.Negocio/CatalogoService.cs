@@ -17,22 +17,22 @@ public partial class CatalogoService(TiendaContext db)
     /* Código de 1 a 4 letras o números, como los de los datos de prueba. */
     public static bool CodigoValido(string? codigo) => codigo != null && RegexCodigo().IsMatch(codigo);
 
-    /* La imagen se muestra en el catálogo: solo rutas del sitio ("~/..." o "/...")
-       o direcciones http(s). Nada de "javascript:", "data:", etc. */
+    /* La imagen se muestra en el catálogo: solo rutas del sitio ("/img/...") o
+       direcciones http(s). Nada de "javascript:", "data:", etc. */
     public static bool ImagenValida(string? url)
     {
         if (string.IsNullOrWhiteSpace(url) || url.Length > 100)
         {
             return false;
         }
-        if (url.StartsWith("~/") || (url.StartsWith('/') && !url.StartsWith("//")))
+        if (url.StartsWith('/') && !url.StartsWith("//"))
         {
             return true;
         }
         return Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 
-    public const string ErrorImagen = "La imagen tiene que ser una ruta del sitio (~/Imagenes_ar/...) o una dirección http(s).";
+    public const string ErrorImagen = "La imagen tiene que ser una ruta del sitio (/img/productos/...) o una dirección http(s).";
 
     // ------------------------------------------------------------------------
     // Tienda

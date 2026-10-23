@@ -18,8 +18,7 @@ public class ComprasService(TiendaContext db)
     /* Registra la compra del carrito con una tarjeta guardada del usuario, en una
        sola transacción: venta y detalles se guardan juntos o no se guarda nada.
        Precio y medio de pago se toman de la base (o del carrito, que se armó con
-       precios de la base), nunca de lo que mande la página. El total y el
-       descuento de stock los hacen los triggers de Detalle_Ventas. */
+       precios de la base), nunca de lo que mande la página. */
     public async Task<ResultadoCompra> ConfirmarAsync(int usuarioId, Carrito? carrito, string? direccion, string? contacto, int tarjetaId)
     {
         if (carrito == null || carrito.Vacio)
@@ -41,7 +40,14 @@ public class ComprasService(TiendaContext db)
             return new(0, "Elegí una de tus tarjetas guardadas que no esté vencida.");
         }
 
-        var venta = new Venta { UsuarioId = usuarioId, Fecha = DateTime.Now, PagoConCredito = tarjeta.EsCredito };
+        var venta = new Venta
+        {
+            UsuarioId = usuarioId,
+            Fecha = DateTime.Now,
+            PagoConCredito = tarjeta.EsCredito,
+            DireccionEntrega = direccion.Trim(),
+            Contacto = contacto.Trim()
+        };
         foreach (ItemCarrito item in carrito.Items)
         {
             Articulo? articulo = await db.Articulos.SingleOrDefaultAsync(a => a.Codigo == item.Codigo);
@@ -53,16 +59,10 @@ public class ComprasService(TiendaContext db)
             {
                 return new(0, $"Solo quedan {articulo.Stock} unidades de \"{articulo.Descripcion}\". Ajustá el carrito para continuar.");
             }
-            venta.Detalles.Add(new DetalleVenta
-            {
-                UsuarioId = usuarioId,
-                ArticuloCodigo = articulo.Codigo,
-                Cantidad = item.Cantidad,
-                PrecioUnitario = item.PrecioUnitario,
-                DireccionEntrega = direccion.Trim(),
-                Contacto = contacto.Trim()
-            });
+            articulo.Stock -= item.Cantidad;
+            venta.Detalles.Add(new DetalleVenta { ArticuloCodigo = articulo.Codigo, Cantidad = item.Cantidad, PrecioUnitario = item.PrecioUnitario });
         }
+        venta.Total = venta.Detalles.Sum(d => d.Subtotal);
 
         db.Ventas.Add(venta);
         await db.SaveChangesAsync();

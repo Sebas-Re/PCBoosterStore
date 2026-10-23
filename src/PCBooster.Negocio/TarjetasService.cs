@@ -21,7 +21,6 @@ public class TarjetasService(TiendaContext db)
         {
             return "Completá el titular y el nombre de la tarjeta.";
         }
-        // Mismo criterio que el trigger tr_Tarjetas_Fecha_Vencimiento de la base.
         if (!Vigente(tarjeta.Vencimiento))
         {
             return "La tarjeta está vencida.";

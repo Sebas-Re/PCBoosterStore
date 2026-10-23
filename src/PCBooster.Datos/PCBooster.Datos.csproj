@@ -5,12 +5,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Los scripts viajan dentro del .dll: la base se crea sin archivos sueltos. -->
+    <!-- Los datos de prueba viajan dentro del .dll: la base se carga sin archivos sueltos. -->
     <EmbeddedResource Include="Sql\*.sql" LogicalName="Sql.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

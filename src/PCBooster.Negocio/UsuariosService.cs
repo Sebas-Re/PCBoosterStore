@@ -119,7 +119,7 @@ public class UsuariosService(TiendaContext db)
         {
             Nombre = nombre,
             Email = email,
-            Telefono = string.IsNullOrWhiteSpace(telefono) ? "Sin telefono" : telefono.Trim(),
+            Telefono = NormalizarTelefono(telefono),
             HashContraseña = Contrasenas.Hashear(contraseña),
             EsAdmin = esAdmin,
             Activo = true,
@@ -216,10 +216,12 @@ public class UsuariosService(TiendaContext db)
     {
         usuario.Nombre = nombre;
         usuario.Email = email;
-        usuario.Telefono = string.IsNullOrWhiteSpace(telefono) ? "Sin telefono" : telefono.Trim();
+        usuario.Telefono = NormalizarTelefono(telefono);
         if (!string.IsNullOrEmpty(nuevaContraseña))
         {
             usuario.HashContraseña = Contrasenas.Hashear(nuevaContraseña);
         }
     }
+
+    static string? NormalizarTelefono(string? telefono) => string.IsNullOrWhiteSpace(telefono) ? null : telefono.Trim();
 }

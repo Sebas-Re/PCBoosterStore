@@ -4,8 +4,7 @@ namespace PCBooster.Datos;
 
 /* Hash de contraseñas con PBKDF2-SHA256 y salt aleatorio. Se guarda como
    "pbkdf2$iteraciones$salt$hash" (salt y hash en Base64): cada hash recuerda sus
-   iteraciones, así se pueden subir sin invalidar las contraseñas existentes
-   (las bases del sitio WebForms usaban 100.000). */
+   iteraciones, así se pueden subir sin invalidar las contraseñas existentes. */
 public static class Contrasenas
 {
     const string Prefijo = "pbkdf2$";

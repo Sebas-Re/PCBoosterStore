@@ -11,10 +11,10 @@ builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false); // no anunciar
 
 // Base de datos: App_Data/PCbooster.db, o la ruta de PCBOOSTER_DB (variable de entorno o
 // configuración; la usan los tests).
-string rutaBase = builder.Configuration[InicializadorBase.VariableEntorno] is { Length: > 0 } configurada
+string rutaBase = builder.Configuration[InicializadorBase.ClaveRuta] is { Length: > 0 } configurada
     ? configurada
-    : InicializadorBase.RutaPorDefecto(builder.Environment.ContentRootPath);
-builder.Services.AddDbContext<TiendaContext>(o => o.UseSqlite(InicializadorBase.CadenaConexion(rutaBase)));
+    : Path.Combine(builder.Environment.ContentRootPath, "App_Data", "PCbooster.db");
+builder.Services.AddDbContext<TiendaContext>(o => o.UseSqlite(TiendaContext.CadenaConexion(rutaBase)));
 builder.Services.AddScoped<UsuariosService>();
 builder.Services.AddScoped<CatalogoService>();
 builder.Services.AddScoped<TarjetasService>();
@@ -74,7 +74,7 @@ builder.Services.AddScoped<CarritoSesion>();
 
 var app = builder.Build();
 
-// Crea la base (con los datos de prueba) o le aplica las migraciones pendientes.
+// Aplica las migraciones pendientes y, la primera vez, carga los datos de prueba.
 InicializadorBase.Inicializar(rutaBase);
 
 if (!app.Environment.IsDevelopment())

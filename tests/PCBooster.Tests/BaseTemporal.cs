@@ -1,11 +1,13 @@
 using Microsoft.Data.Sqlite;
 using PCBooster.Datos;
 
+// Hay estado estático (iteraciones del hash, intentos de login): los tests corren de a uno.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace PCBooster.Tests;
 
-/* Cada test arranca con una base SQLite nueva en una carpeta temporal, creada
-   con el schema y los datos de prueba (sin el historial de demo, salvo que el
-   test lo pida). */
+/* Cada test arranca con una base SQLite nueva en una carpeta temporal, con los
+   datos de prueba (sin el historial de demo, salvo que el test lo pida). */
 public abstract class BaseTemporal : IDisposable
 {
     readonly string carpeta = Path.Combine(Path.GetTempPath(), "pcbooster-tests-" + Guid.NewGuid().ToString("N"));
@@ -29,17 +31,6 @@ public abstract class BaseTemporal : IDisposable
         }
         return new TiendaContext(TiendaContext.Opciones(Ruta));
     }
-
-    protected object? Escalar(string sql)
-    {
-        using var cn = new SqliteConnection(InicializadorBase.CadenaConexion(Ruta));
-        cn.Open();
-        using SqliteCommand cmd = cn.CreateCommand();
-        cmd.CommandText = sql;
-        return cmd.ExecuteScalar();
-    }
-
-    protected void Ejecutar(string sql) => Escalar(sql);
 
     public void Dispose()
     {

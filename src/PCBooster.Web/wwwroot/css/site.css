@@ -84,7 +84,7 @@ body {
     font-size: 1.4rem;
 }
 
-/* Validadores de WebForms */
+/* Mensajes de validación de los formularios */
 .validador {
     display: block;
     font-size: .875em;

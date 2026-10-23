@@ -20,7 +20,7 @@ public class SitioFixture : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Production");
-        builder.UseSetting(InicializadorBase.VariableEntorno, Path.Combine(carpeta, "PCbooster.db"));
+        builder.UseSetting(InicializadorBase.ClaveRuta, Path.Combine(carpeta, "PCbooster.db"));
     }
 
     public Navegador NuevoNavegador() => new(this);

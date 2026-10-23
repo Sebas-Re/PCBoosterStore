@@ -485,4 +485,5 @@ $RECYCLE.BIN/
 **/App_Data/
 *.db
 *.db-journal
-*.db.tmp
+*.db-shm
+*.db-wal

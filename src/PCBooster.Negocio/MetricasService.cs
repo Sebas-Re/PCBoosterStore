@@ -37,8 +37,8 @@ public class MetricasService(TiendaContext db)
             Ingresos = await lineas.SumAsync(d => d.Cantidad * d.PrecioUnitario),
             Pedidos = await lineas.Select(d => d.VentaId).Distinct().CountAsync(),
             Unidades = await lineas.SumAsync(d => d.Cantidad),
-            Compradores = await lineas.Select(d => d.UsuarioId).Distinct().CountAsync(),
-            CompradoresRecurrentes = await lineas.GroupBy(d => d.UsuarioId)
+            Compradores = await lineas.Select(d => d.Venta!.UsuarioId).Distinct().CountAsync(),
+            CompradoresRecurrentes = await lineas.GroupBy(d => d.Venta!.UsuarioId)
                 .CountAsync(g => g.Select(d => d.VentaId).Distinct().Count() >= 2),
             ClientesNuevos = await db.Usuarios.CountAsync(u => !u.EsAdmin && u.FechaAlta >= desde && u.FechaAlta < hasta)
         };
@@ -65,7 +65,7 @@ public class MetricasService(TiendaContext db)
         DateTime primerMes = PrimerMes(meses);
         var porMes = await db.Usuarios.AsNoTracking()
             .Where(u => !u.EsAdmin && u.FechaAlta >= primerMes)
-            .GroupBy(u => new { u.FechaAlta!.Value.Year, u.FechaAlta.Value.Month })
+            .GroupBy(u => new { u.FechaAlta.Year, u.FechaAlta.Month })
             .Select(g => new { g.Key.Year, g.Key.Month, Clientes = g.Count() })
             .ToListAsync();
         return SeriePorMes(meses, mes => (porMes.SingleOrDefault(f => f.Year == mes.Year && f.Month == mes.Month)?.Clientes ?? 0, 0));
@@ -139,7 +139,7 @@ public class MetricasService(TiendaContext db)
     {
         var (desde, hasta) = UltimosDias(dias);
         var filas = await Lineas(desde, hasta)
-            .GroupBy(d => new { d.UsuarioId, d.Venta!.Usuario!.Nombre })
+            .GroupBy(d => new { d.Venta!.UsuarioId, d.Venta.Usuario!.Nombre })
             .Select(g => new { g.Key.UsuarioId, g.Key.Nombre, Pedidos = g.Select(d => d.VentaId).Distinct().Count(), Gasto = g.Sum(d => d.Cantidad * d.PrecioUnitario) })
             .OrderByDescending(f => f.Gasto)
             .Take(cantidad)

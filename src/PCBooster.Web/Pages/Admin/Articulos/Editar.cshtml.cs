@@ -56,7 +56,7 @@ public class EditarModel(CatalogoService catalogo) : PaginaBase
         Categorias = await catalogo.CategoriasAsync();
         if (EsNuevo)
         {
-            Datos.Imagen = "~/Imagenes_ar/";
+            Datos.Imagen = "/img/productos/";
             return Page();
         }
         Articulo? articulo = await catalogo.ObtenerAsync(Codigo!);

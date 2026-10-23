@@ -125,7 +125,7 @@
                     <div class="mt-4" id="detalleVenta">
                         <span class="h6 d-block">Detalle de la venta N° @detalle.Id</span>
                         <table class="table table-sm mb-0">
-                            <thead><tr><th>Código</th><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Precio</th><th>Entrega</th></tr></thead>
+                            <thead><tr><th>Código</th><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Precio</th></tr></thead>
                             <tbody>
                                 @foreach (DetalleVenta linea in detalle.Detalles)
                                 {
@@ -134,11 +134,11 @@
                                         <td>@linea.Articulo?.Descripcion</td>
                                         <td class="text-center">@linea.Cantidad</td>
                                         <td class="text-end text-nowrap">@linea.PrecioUnitario.ToString("C0")</td>
-                                        <td>@linea.DireccionEntrega</td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
+                        <span class="d-block small text-body-secondary mt-2">Entrega en @detalle.DireccionEntrega · Recibe: @detalle.Contacto</span>
                     </div>
                 }
             </div>

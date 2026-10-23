@@ -120,7 +120,7 @@ public class NegocioTests : BaseTemporal
         Usuario? nuevo = await Usuarios().LoginAsync("nuevo", "clave1");
         Assert.NotNull(nuevo);
         Assert.False(nuevo.EsAdmin);
-        Assert.Equal("Sin telefono", nuevo.Telefono);
+        Assert.Null(nuevo.Telefono);
         Assert.True(nuevo.FechaAlta > DateTime.Now.AddMinutes(-1));
         Assert.Contains("nombre de usuario", await Usuarios().RegistrarAsync("NUEVO", "otro@mail.com", "", "clave1"));
         Assert.Contains("e-mail", await Usuarios().RegistrarAsync("otro", "N@MAIL.COM", "", "clave1"));
@@ -232,7 +232,7 @@ public class NegocioTests : BaseTemporal
         Assert.Equal(6, (await Catalogo().BuscarAsync(null, null, 99, 12)).Numero); // fuera de rango: la última
     }
 
-    Articulo NuevoArticulo(string codigo, string imagen = "~/Imagenes_ar/Gabinete/gb1.png") => new()
+    Articulo NuevoArticulo(string codigo, string imagen = "/img/productos/gb1.png") => new()
     {
         Codigo = codigo, CategoriaId = 2, Descripcion = "Nuevo " + codigo, Stock = 1, Precio = 100, Imagen = imagen
     };
@@ -258,8 +258,7 @@ public class NegocioTests : BaseTemporal
     }
 
     [Theory]
-    [InlineData("~/Imagenes_ar/Gabinete/gb1.png", true)]
-    [InlineData("/Imagenes_ar/x.png", true)]
+    [InlineData("/img/productos/gb1.png", true)]
     [InlineData("https://cdn.ejemplo.com/a.png", true)]
     [InlineData("javascript:alert(1)", false)]
     [InlineData("data:image/svg+xml,<svg onload=alert(1)>", false)]
@@ -329,6 +328,7 @@ public class NegocioTests : BaseTemporal
         Assert.True(resultado.Ok, resultado.Error);
         Venta venta = (await Compras().DetalleAsync(resultado.IdVenta, 5))!;
         Assert.Equal(14300m, venta.Total);
+        Assert.Equal("Calle 123", venta.DireccionEntrega);
         Assert.True(venta.PagoConCredito); // tomado de la tarjeta
         Assert.Equal(2, venta.Detalles.Count);
         Assert.Equal(8, await Stock("gb1"));
@@ -409,7 +409,7 @@ public class NegocioTests : BaseTemporal
         await using TiendaContext compra = Contexto();
         await using var transaccion = await compra.Database.BeginTransactionAsync();
 
-        var cadena = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(InicializadorBase.CadenaConexion(Ruta)) { DefaultTimeout = 1 };
+        var cadena = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(TiendaContext.CadenaConexion(Ruta)) { DefaultTimeout = 1 };
         await using var otra = new TiendaContext(new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<TiendaContext>().UseSqlite(cadena.ToString()).Options);
         otra.Database.SetCommandTimeout(1);
 

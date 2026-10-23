@@ -131,6 +131,24 @@ public class TiendaTests(SitioFixture sitio) : Pruebas(sitio)
     }
 
     [Fact]
+    public async Task TodasLasImagenesDelCatalogoExisten()
+    {
+        await IniciarSesion("Nom3", "ctr3");
+        var imagenes = new HashSet<string>();
+        for (int pagina = 1; pagina <= 6; pagina++)
+        {
+            Pagina catalogo = await Navegador.Abrir($"/Catalogo?pagina={pagina}");
+            imagenes.UnionWith(catalogo.Documento.QuerySelectorAll(".producto img").Select(i => i.GetAttribute("src")!));
+        }
+
+        Assert.Equal(68, imagenes.Count); // una por artículo
+        foreach (string imagen in imagenes)
+        {
+            Assert.True((await Navegador.Pedir(imagen)).IsSuccessStatusCode, imagen);
+        }
+    }
+
+    [Fact]
     public async Task LaBusquedaSeMuestraEncodeada()
     {
         await IniciarSesion("Nom3", "ctr3");

@@ -63,10 +63,7 @@ else
                                 }
                             </tbody>
                         </table>
-                        @if (Model.Detalle.Detalles.FirstOrDefault() is { } primero)
-                        {
-                            <span class="d-block small text-body-secondary mt-3">Entrega en @primero.DireccionEntrega · Recibe: @primero.Contacto</span>
-                        }
+                        <span class="d-block small text-body-secondary mt-3">Entrega en @Model.Detalle.DireccionEntrega · Recibe: @Model.Detalle.Contacto</span>
                     }
                 </div>
             </div>

@@ -53,7 +53,7 @@ public class EditarModel(UsuariosService usuarios) : PaginaBase
         {
             Nombre = usuario.Nombre,
             Email = usuario.Email,
-            Telefono = usuario.Telefono == "Sin telefono" ? "" : usuario.Telefono,
+            Telefono = usuario.Telefono,
             EsAdmin = usuario.EsAdmin,
             Activo = usuario.Activo
         };

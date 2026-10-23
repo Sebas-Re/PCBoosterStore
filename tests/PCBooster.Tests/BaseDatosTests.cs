@@ -4,7 +4,7 @@ using PCBooster.Dominio;
 
 namespace PCBooster.Tests;
 
-/* El mapeo de EF Core contra el schema heredado y los triggers de la base. */
+/* El schema que crean las migraciones y los datos de prueba. */
 public class BaseDatosTests : BaseTemporal
 {
     [Fact]
@@ -12,26 +12,11 @@ public class BaseDatosTests : BaseTemporal
     {
         using var db = Contexto();
 
+        Assert.Empty(db.Database.GetPendingMigrations());
         Assert.Equal(9, db.Usuarios.Count());
         Assert.Equal(8, db.Categorias.Count());
         Assert.Equal(68, db.Articulos.Count());
         Assert.Empty(db.Ventas);
-        Assert.Equal(InicializadorBase.VersionSchema, Convert.ToInt32(Escalar("pragma user_version")));
-    }
-
-    [Fact]
-    public void LaRutaPorDefectoRespetaLaVariableDeEntorno()
-    {
-        Assert.Equal(Path.Combine("sitio", "App_Data", "PCbooster.db"), InicializadorBase.RutaPorDefecto("sitio"));
-        Environment.SetEnvironmentVariable(InicializadorBase.VariableEntorno, @"C:\otra\base.db");
-        try
-        {
-            Assert.Equal(@"C:\otra\base.db", InicializadorBase.RutaPorDefecto("sitio"));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(InicializadorBase.VariableEntorno, null);
-        }
     }
 
     [Fact]
@@ -59,7 +44,7 @@ public class BaseDatosTests : BaseTemporal
         Assert.Equal("Gabinete", gabinete.Categoria!.Descripcion);
         Assert.Equal(3500m, gabinete.Precio);
         Assert.Equal(10, gabinete.Stock);
-        Assert.Equal("~/Imagenes_ar/Gabinete/gb1.png", gabinete.Imagen);
+        Assert.Equal("/img/productos/gb1.png", gabinete.Imagen);
         Assert.True(gabinete.Activo);
         Assert.False(string.IsNullOrEmpty(gabinete.Marca));
         Assert.Contains(gabinete.ListaEspecificaciones(), e => e.Key.Length > 0 && e.Value.Length > 0);
@@ -69,7 +54,7 @@ public class BaseDatosTests : BaseTemporal
         Assert.Equal("admAmador", admin.Nombre);
         Assert.True(admin.EsAdmin);
         Assert.True(admin.Activo);
-        Assert.NotNull(admin.FechaAlta);
+        Assert.True(admin.FechaAlta < DateTime.Now);
         Assert.True(Contrasenas.Verificar("admpsw2", admin.HashContraseña));
     }
 
@@ -81,6 +66,9 @@ public class BaseDatosTests : BaseTemporal
         Assert.True(db.Usuarios.Any(u => u.Nombre == "ADMAMADOR"));
         Assert.True(db.Usuarios.Any(u => u.Email == "AMADOR@ADM.COM"));
         Assert.True(db.Articulos.Any(a => a.Codigo == "GB1"));
+
+        db.Usuarios.Add(new Usuario { Nombre = "NOM1", Email = "otro@mail.com", HashContraseña = "x", FechaAlta = DateTime.Now });
+        Assert.Throws<DbUpdateException>(() => db.SaveChanges()); // índice único sin distinguir mayúsculas
     }
 
     [Fact]
@@ -96,14 +84,14 @@ public class BaseDatosTests : BaseTemporal
     }
 
     [Fact]
-    public void UnaVentaConDetallesDescuentaStockYSumaElTotal()
+    public void UnaVentaSeGuardaConSusDetallesYSuEntrega()
     {
         int idVenta;
         using (var db = Contexto())
         {
-            var venta = new Venta { UsuarioId = 5, Fecha = DateTime.Now, PagoConCredito = true };
-            venta.Detalles.Add(new DetalleVenta { UsuarioId = 5, ArticuloCodigo = "gb1", Cantidad = 2, PrecioUnitario = 3500, DireccionEntrega = "Calle 1", Contacto = "Yo" });
-            venta.Detalles.Add(new DetalleVenta { UsuarioId = 5, ArticuloCodigo = "fnt1", Cantidad = 1, PrecioUnitario = 7300, DireccionEntrega = "Calle 1", Contacto = "Yo" });
+            var venta = new Venta { UsuarioId = 5, Fecha = DateTime.Now, PagoConCredito = true, Total = 14300, DireccionEntrega = "Calle 1", Contacto = "Yo" };
+            venta.Detalles.Add(new DetalleVenta { ArticuloCodigo = "gb1", Cantidad = 2, PrecioUnitario = 3500 });
+            venta.Detalles.Add(new DetalleVenta { ArticuloCodigo = "fnt1", Cantidad = 1, PrecioUnitario = 7300 });
             db.Ventas.Add(venta);
             db.SaveChanges();
             idVenta = venta.Id;
@@ -111,24 +99,22 @@ public class BaseDatosTests : BaseTemporal
 
         using var otra = Contexto();
         Venta guardada = otra.Ventas.Include(v => v.Detalles).Single(v => v.Id == idVenta);
-        Assert.Equal(14300m, guardada.Total); // tr_SumaTotal
-        Assert.Equal(2, guardada.Detalles.Count);
-        Assert.Equal(8, otra.Articulos.Single(a => a.Codigo == "gb1").Stock); // tr_ControlStock
+        Assert.Equal(14300m, guardada.Total);
+        Assert.Equal("Calle 1", guardada.DireccionEntrega);
+        Assert.Equal(new[] { 7300m, 7000m }, guardada.Detalles.OrderBy(d => d.ArticuloCodigo).Select(d => d.Subtotal));
     }
 
     [Fact]
     public void ElStockNoPuedeQuedarNegativo()
     {
         using var db = Contexto();
-        var venta = new Venta { UsuarioId = 5, Fecha = DateTime.Now };
-        venta.Detalles.Add(new DetalleVenta { UsuarioId = 5, ArticuloCodigo = "gb1", Cantidad = 11, PrecioUnitario = 3500, DireccionEntrega = "Calle 1", Contacto = "Yo" });
-        db.Ventas.Add(venta);
+        db.Articulos.Single(a => a.Codigo == "gb1").Stock = -1;
 
         Assert.Throws<DbUpdateException>(() => db.SaveChanges());
     }
 
     [Fact]
-    public void TarjetasSeGuardanSinCodigoDeSeguridadYNoSeAceptanVencidas()
+    public void LasTarjetasGuardanElNumeroCompletoYElVencimiento()
     {
         using (var db = Contexto())
         {
@@ -136,19 +122,12 @@ public class BaseDatosTests : BaseTemporal
             db.SaveChanges();
         }
 
-        using (var db = Contexto())
-        {
-            Tarjeta guardada = db.Tarjetas.Single();
-            Assert.True(guardada.Id > 0);
-            Assert.Equal(4567123412340012L, guardada.Numero); // 16 dígitos completos
-            Assert.Equal("0012", guardada.UltimosDigitos);
-            Assert.Equal(new DateOnly(2099, 12, 1), guardada.Vencimiento);
-            Assert.Equal(0L, Escalar("select count(*) from pragma_table_info('Tarjetas') where name like 'Codigo_Seguridad%'"));
-
-            db.Tarjetas.Add(new Tarjeta { UsuarioId = 5, Titular = "Nom Uno", Nombre = "Visa", Numero = 1234, Vencimiento = new DateOnly(2020, 1, 1) });
-            var error = Assert.Throws<DbUpdateException>(() => db.SaveChanges());
-            Assert.Contains("vencida", error.InnerException!.Message);
-        }
+        using var otra = Contexto();
+        Tarjeta guardada = otra.Tarjetas.Single();
+        Assert.True(guardada.Id > 0);
+        Assert.Equal(4567123412340012L, guardada.Numero); // 16 dígitos completos
+        Assert.Equal("0012", guardada.UltimosDigitos);
+        Assert.Equal(new DateOnly(2099, 12, 1), guardada.Vencimiento);
     }
 
     [Fact]
@@ -160,11 +139,15 @@ public class BaseDatosTests : BaseTemporal
         Assert.Equal(29, db.Usuarios.Count());
         Assert.True(db.Ventas.Count() > 100);
         // Ninguna venta en el futuro ni fuera de los últimos 6 meses.
-        Assert.Equal(0L, Escalar("select count(*) from Ventas where FechaVenta_ve > datetime('now','localtime') or FechaVenta_ve < datetime('now','localtime','-181 days')"));
-        // El total de cada venta (calculado por tr_SumaTotal) coincide con sus detalles.
-        Assert.Equal(0L, Escalar("select count(*) from Ventas v where TotalVenta_ve <> (select sum(Cantidad_dv * Precio_Unitario_dv) from Detalle_Ventas where IdDetVenta_dv = v.IdVentas_ve)"));
+        Assert.False(db.Ventas.Any(v => v.Fecha > DateTime.Now || v.Fecha < DateTime.Now.AddDays(-181)));
+        // El total de cada venta coincide con sus detalles.
+        Assert.False(db.Ventas.Any(v => v.Total != v.Detalles.Sum(d => d.Cantidad * d.PrecioUnitario)));
         // Ningún cliente compra antes de darse de alta.
-        Assert.Equal(0L, Escalar("select count(*) from Ventas v join Usuarios u on u.IdUsuario_us = v.IdUsuario_ve where v.FechaVenta_ve < u.FechaAlta_us"));
+        Assert.False(db.Ventas.Any(v => v.Fecha < v.Usuario!.FechaAlta));
+        // El stock ya descuenta lo vendido.
+        int vendidos = db.DetallesVenta.Where(d => d.ArticuloCodigo == "ps4").Sum(d => d.Cantidad);
+        Assert.True(vendidos > 0);
+        Assert.Equal(40 - vendidos, db.Articulos.Single(a => a.Codigo == "ps4").Stock);
         Assert.True(Contrasenas.Verificar("demo123", db.Usuarios.Single(u => u.Nombre == "lucia.g").HashContraseña));
     }
 
