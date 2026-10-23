@@ -1,0 +1,56 @@
+@page
+@model PCBooster.Web.Pages.Admin.Usuarios.IndexModel
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Usuarios</h1>
+    <div class="d-flex flex-wrap gap-2">
+        <form method="get" class="input-group" style="width: 300px" role="search">
+            <input type="search" name="q" value="@Model.Q" class="form-control" placeholder="Nombre o e-mail" aria-label="Buscar usuarios" />
+            <button type="submit" class="btn btn-outline-primary" title="Buscar"><i class="bi bi-search"></i></button>
+        </form>
+        <a class="btn btn-outline-secondary" asp-page="Index">Ver todos</a>
+        <a class="btn btn-primary" asp-page="Editar" id="nuevoUsuario"><i class="bi bi-person-plus"></i> Nuevo usuario</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body table-responsive">
+        @if (Model.Usuarios.Count == 0)
+        {
+            <span class="text-body-secondary">No hay usuarios para mostrar.</span>
+        }
+        else
+        {
+            <table class="table table-hover mb-0" id="usuarios">
+                <thead><tr><th>ID</th><th>Usuario</th><th>E-mail</th><th>Teléfono</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (Usuario usuario in Model.Usuarios)
+                    {
+                        <tr>
+                            <td>@usuario.Id</td>
+                            <td>@usuario.Nombre</td>
+                            <td>@usuario.Email</td>
+                            <td>@usuario.Telefono</td>
+                            <td><span class="badge @(usuario.EsAdmin ? "text-bg-primary" : "text-bg-light")">@(usuario.EsAdmin ? "Administrador" : "Cliente")</span></td>
+                            <td><span class="badge @(usuario.Activo ? "text-bg-success" : "text-bg-secondary")">@(usuario.Activo ? "Activo" : "Inactivo")</span></td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-page="Editar" asp-route-id="@usuario.Id" title="Editar"><i class="bi bi-pencil"></i></a>
+                                @if (usuario.Activo)
+                                {
+                                    <form method="post" asp-page-handler="Desactivar" asp-route-usuarioId="@usuario.Id" asp-route-q="@Model.Q" asp-route-pagina="@Model.Pagina"
+                                          class="d-inline" data-confirmar="¿Desactivar este usuario?">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar"><i class="bi bi-person-x"></i></button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        <partial name="_Paginacion" model="Model.Paginacion" />
+    </div>
+</div>

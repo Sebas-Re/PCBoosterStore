@@ -1,0 +1,58 @@
+@page
+@model PCBooster.Web.Pages.Admin.Articulos.IndexModel
+@{
+    ViewData["Title"] = "Artículos";
+}
+
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Artículos</h1>
+    <div class="d-flex flex-wrap gap-2">
+        <form method="get" class="input-group" style="width: 300px" role="search">
+            <input type="search" name="q" value="@Model.Q" class="form-control" placeholder="Código o descripción" aria-label="Buscar artículos" />
+            <button type="submit" class="btn btn-outline-primary" title="Buscar"><i class="bi bi-search"></i></button>
+        </form>
+        <a class="btn btn-primary" asp-page="Editar" id="nuevoArticulo"><i class="bi bi-plus-lg"></i> Nuevo artículo</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body table-responsive">
+        @if (Model.Articulos.Count == 0)
+        {
+            <span class="text-body-secondary">No hay artículos para mostrar.</span>
+        }
+        else
+        {
+            <table class="table table-hover mb-0" id="articulos">
+                <thead>
+                    <tr><th></th><th>Código</th><th>Descripción</th><th>Categoría</th><th class="text-end">Stock</th><th class="text-end">Precio</th><th>Estado</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (Articulo articulo in Model.Articulos)
+                    {
+                        <tr>
+                            <td><img src="@Url.Content(articulo.Imagen ?? "~/img/sin-imagen.svg")" alt="" width="48" height="48" style="object-fit: contain" loading="lazy" data-respaldo /></td>
+                            <td>@articulo.Codigo</td>
+                            <td>@articulo.Descripcion</td>
+                            <td>@articulo.Categoria?.Descripcion</td>
+                            <td class="text-end">@articulo.Stock</td>
+                            <td class="text-end text-nowrap">@articulo.Precio.ToString("C0")</td>
+                            <td><span class="badge @(articulo.Activo ? "text-bg-success" : "text-bg-secondary")">@(articulo.Activo ? "Activo" : "Dado de baja")</span></td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-page="Editar" asp-route-codigo="@articulo.Codigo" title="Editar"><i class="bi bi-pencil"></i></a>
+                                @if (articulo.Activo)
+                                {
+                                    <form method="post" asp-page-handler="Baja" asp-route-codigo="@articulo.Codigo" asp-route-q="@Model.Q" asp-route-pagina="@Model.Pagina"
+                                          class="d-inline" data-confirmar="¿Dar de baja este artículo?">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Dar de baja"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        <partial name="_Paginacion" model="Model.Paginacion" />
+    </div>
+</div>

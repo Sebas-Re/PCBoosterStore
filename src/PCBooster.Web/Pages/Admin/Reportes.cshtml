@@ -1,0 +1,193 @@
+@page
+@model PCBooster.Web.Pages.Admin.ReportesModel
+@{
+    ViewData["Title"] = "Reportes";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h3 mb-0">Reportes</h1>
+    <ul class="nav nav-pills" id="periodos">
+        @foreach (int dias in ReportesModel.PeriodosDisponibles)
+        {
+            <li class="nav-item"><a class="nav-link @(dias == Model.Dias ? "active" : "")" asp-page="/Admin/Reportes" asp-route-dias="@dias">@dias días</a></li>
+        }
+    </ul>
+</div>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4" id="indicadores">
+    @foreach (Indicador indicador in Model.Indicadores)
+    {
+        <partial name="_Indicador" model="indicador" />
+    }
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h6 mb-3">Ingresos y pedidos por día <span class="text-body-secondary fw-normal">(últimos @Model.Dias días)</span></h2>
+        <div class="grafico"><canvas aria-label="Ingresos por día" role="img" data-grafico="@Model.GraficoDias"></canvas></div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-3">Productos más vendidos <span class="text-body-secondary fw-normal">(unidades)</span></h2>
+                <div class="grafico"><canvas aria-label="Productos más vendidos" role="img" data-grafico="@Model.GraficoProductos"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6 mb-3">Medios de pago <span class="text-body-secondary fw-normal">(pedidos)</span></h2>
+                <div class="grafico grafico-chico"><canvas aria-label="Medios de pago" role="img" data-grafico="@Model.GraficoPagos"></canvas></div>
+                <p class="small text-body-secondary mt-3 mb-0">
+                    Tasa de recompra: <strong id="recompra">@Model.TasaRecompra</strong>
+                    de los clientes que compraron en el período lo hicieron más de una vez.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-5">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3"><i class="bi bi-trophy"></i> Mejores clientes</h2>
+                @if (Model.TopClientes.Count == 0)
+                {
+                    <span class="text-body-secondary">No hubo compras en el período.</span>
+                }
+                else
+                {
+                    <table class="table table-hover mb-0" id="topClientes">
+                        <thead><tr><th>Cliente</th><th class="text-end">Pedidos</th><th class="text-end">Gasto</th></tr></thead>
+                        <tbody>
+                            @foreach (ClienteDestacado cliente in Model.TopClientes)
+                            {
+                                <tr>
+                                    <td><a asp-page="/Admin/Reportes" asp-all-route-data='Model.Ruta(sin: "venta", ("usuario", cliente.Id), ("pv", 1))'>@cliente.Nombre</a></td>
+                                    <td class="text-end">@cliente.Pedidos</td>
+                                    <td class="text-end text-nowrap">@cliente.Gasto.ToString("C0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0"><i class="bi bi-receipt"></i> Ventas</h2>
+                    <form method="get" class="d-flex gap-2">
+                        <input type="hidden" name="dias" value="@Model.Dias" />
+                        <div class="input-group" style="width: 220px">
+                            <input type="number" min="1" name="usuario" value="@Model.Usuario" class="form-control" placeholder="ID de usuario" aria-label="ID de usuario" />
+                            <button type="submit" class="btn btn-outline-primary" title="Filtrar por usuario"><i class="bi bi-funnel"></i></button>
+                        </div>
+                        <a class="btn btn-outline-secondary" asp-page="/Admin/Reportes" asp-route-dias="@Model.Dias">Todas</a>
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    @if (Model.Ventas.Count == 0)
+                    {
+                        <span class="text-body-secondary">No hay ventas para mostrar.</span>
+                    }
+                    else
+                    {
+                        <table class="table table-hover mb-0" id="ventas">
+                            <thead><tr><th>N°</th><th>Usuario</th><th>Fecha</th><th class="text-end">Total</th><th></th></tr></thead>
+                            <tbody>
+                                @foreach (Venta venta in Model.Ventas)
+                                {
+                                    <tr class="@(venta.Id == Model.Venta ? "table-primary" : "")">
+                                        <td>@venta.Id</td>
+                                        <td>@venta.UsuarioId · @venta.Usuario?.Nombre</td>
+                                        <td>@venta.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="text-end text-nowrap">@venta.Total.ToString("C0")</td>
+                                        <td class="text-end"><a class="btn btn-sm btn-outline-primary" asp-page="/Admin/Reportes" asp-all-route-data='Model.Ruta(cambios: ("venta", venta.Id))'>Detalle</a></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                <partial name="_Paginacion" model="Model.PaginacionVentas" />
+
+                @if (Model.DetalleVenta is { } detalle)
+                {
+                    <div class="mt-4" id="detalleVenta">
+                        <span class="h6 d-block">Detalle de la venta N° @detalle.Id</span>
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Código</th><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Precio</th><th>Entrega</th></tr></thead>
+                            <tbody>
+                                @foreach (DetalleVenta linea in detalle.Detalles)
+                                {
+                                    <tr>
+                                        <td>@linea.ArticuloCodigo</td>
+                                        <td>@linea.Articulo?.Descripcion</td>
+                                        <td class="text-center">@linea.Cantidad</td>
+                                        <td class="text-end text-nowrap">@linea.PrecioUnitario.ToString("C0")</td>
+                                        <td>@linea.DireccionEntrega</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0"><i class="bi bi-box-seam"></i> Artículos vendidos <span class="text-body-secondary fw-normal fs-6">(histórico)</span></h2>
+                    <form method="get" class="d-flex flex-wrap gap-2">
+                        <input type="hidden" name="dias" value="@Model.Dias" />
+                        <div class="input-group" style="width: 240px">
+                            <input type="text" name="codigo" value="@Model.Codigo" maxlength="4" class="form-control" placeholder="Código de artículo" aria-label="Código de artículo" />
+                            <button type="submit" class="btn btn-outline-primary" title="Filtrar"><i class="bi bi-search"></i></button>
+                        </div>
+                        <select name="orden" class="form-select" style="width: auto" aria-label="Orden" data-autoenviar>
+                            <option value="codigo" selected="@(Model.Orden == "codigo")">Ordenar por código</option>
+                            <option value="unidades" selected="@(Model.Orden == "unidades")">Ordenar por unidades</option>
+                            <option value="recaudacion" selected="@(Model.Orden == "recaudacion")">Ordenar por recaudación</option>
+                        </select>
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    @if (Model.ArticulosVendidos.Count == 0)
+                    {
+                        <span class="text-body-secondary">No hay ventas para ese criterio.</span>
+                    }
+                    else
+                    {
+                        <table class="table table-hover mb-0" id="articulosVendidos">
+                            <thead><tr><th>Código</th><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Recaudación</th></tr></thead>
+                            <tbody>
+                                @foreach (ArticuloVendido articulo in Model.ArticulosVendidos)
+                                {
+                                    <tr>
+                                        <td>@articulo.Codigo</td>
+                                        <td>@articulo.Descripcion</td>
+                                        <td class="text-end">@articulo.Unidades</td>
+                                        <td class="text-end text-nowrap">@articulo.Total.ToString("C0")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                <partial name="_Paginacion" model="Model.PaginacionArticulos" />
+            </div>
+        </div>
+    </div>
+</div>

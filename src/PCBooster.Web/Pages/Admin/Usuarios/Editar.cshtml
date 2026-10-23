@@ -1,0 +1,59 @@
+@page "{id:int?}"
+@model PCBooster.Web.Pages.Admin.Usuarios.EditarModel
+@{
+    ViewData["Title"] = Model.EsNuevo ? "Nuevo usuario" : $"Usuario {Model.Id}";
+}
+
+<nav aria-label="Ruta" class="mb-2"><a asp-page="Index" class="small"><i class="bi bi-arrow-left"></i> Usuarios</a></nav>
+<h1 class="h3 mb-3">@ViewData["Title"]</h1>
+
+<form method="post" class="card" style="max-width: 48rem">
+    <div class="card-body row g-3">
+        <div class="col-sm-6">
+            <label asp-for="Datos.Nombre" class="form-label">Nombre de usuario</label>
+            <input asp-for="Datos.Nombre" class="form-control" maxlength="10" required />
+            <span asp-validation-for="Datos.Nombre" class="validador"></span>
+        </div>
+        <div class="col-sm-6">
+            <label asp-for="Datos.Email" class="form-label">E-mail</label>
+            <input asp-for="Datos.Email" type="email" class="form-control" maxlength="30" required />
+            <span asp-validation-for="Datos.Email" class="validador"></span>
+        </div>
+        <div class="col-sm-6">
+            <label asp-for="Datos.Telefono" class="form-label">Teléfono</label>
+            <input asp-for="Datos.Telefono" type="tel" class="form-control" maxlength="15" inputmode="numeric" />
+            <span asp-validation-for="Datos.Telefono" class="validador"></span>
+        </div>
+        <div class="col-sm-6">
+            <label asp-for="Datos.Contraseña" class="form-label">@(Model.EsNuevo ? "Contraseña" : "Nueva contraseña (opcional)")</label>
+            <input asp-for="Datos.Contraseña" class="form-control" maxlength="64" autocomplete="new-password" required="@Model.EsNuevo" />
+            <div class="form-text">Entre 6 y 64 caracteres.@(Model.EsNuevo ? "" : " Vacía = no cambiarla.")</div>
+            <span asp-validation-for="Datos.Contraseña" class="validador"></span>
+        </div>
+        <div class="col-sm-6">
+            <label asp-for="Datos.EsAdmin" class="form-label">Tipo</label>
+            <select asp-for="Datos.EsAdmin" class="form-select" disabled="@Model.EsElMismo">
+                <option value="false">Cliente</option>
+                <option value="true">Administrador</option>
+            </select>
+        </div>
+        @if (!Model.EsNuevo)
+        {
+            <div class="col-sm-6">
+                <label asp-for="Datos.Activo" class="form-label">Estado</label>
+                <select asp-for="Datos.Activo" class="form-select" disabled="@Model.EsElMismo">
+                    <option value="true">Activo</option>
+                    <option value="false">Inactivo</option>
+                </select>
+            </div>
+        }
+        @if (Model.EsElMismo)
+        {
+            <div class="col-12 form-text">Es tu cuenta: no podés quitarte el rol de administrador ni desactivarte.</div>
+        }
+    </div>
+    <div class="card-footer bg-white d-flex gap-2 justify-content-end py-3">
+        <a class="btn btn-outline-secondary" asp-page="Index">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="btnGuardar">@(Model.EsNuevo ? "Agregar usuario" : "Guardar cambios")</button>
+    </div>
+</form>

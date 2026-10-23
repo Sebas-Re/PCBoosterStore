@@ -1,7 +1,8 @@
 /* Comportamientos del markup declarados con atributos data-*, para no usar
    JavaScript inline (la Content-Security-Policy no lo permite):
    - <img data-respaldo>: si la imagen no carga, muestra la imagen de reemplazo.
-   - <form data-confirmar="¿Seguro?">: pide confirmación antes de enviar. */
+   - <form data-confirmar="¿Seguro?">: pide confirmación antes de enviar.
+   - <select data-autoenviar>: envía el formulario al elegir una opción. */
 (function () {
     "use strict";
 
@@ -26,6 +27,13 @@
     document.querySelectorAll("img[data-respaldo]").forEach(function (img) {
         if (img.complete && img.naturalWidth === 0) {
             reemplazar(img);
+        }
+    });
+
+    // <select data-autoenviar>: envía su formulario al cambiar la opción.
+    document.addEventListener("change", function (e) {
+        if (e.target.matches("select[data-autoenviar]") && e.target.form) {
+            e.target.form.requestSubmit();
         }
     });
 

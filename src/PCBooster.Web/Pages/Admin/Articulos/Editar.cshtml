@@ -1,0 +1,89 @@
+@page "{codigo?}"
+@model PCBooster.Web.Pages.Admin.Articulos.EditarModel
+@{
+    ViewData["Title"] = Model.EsNuevo ? "Nuevo artículo" : $"Artículo {Model.Codigo}";
+}
+
+<nav aria-label="Ruta" class="mb-2"><a asp-page="Index" class="small"><i class="bi bi-arrow-left"></i> Artículos</a></nav>
+<h1 class="h3 mb-3">@ViewData["Title"]</h1>
+
+<form method="post" class="card">
+    <div class="card-body row g-3">
+        <div class="col-sm-3 col-lg-2">
+            <label asp-for="Datos.Codigo" class="form-label">Código</label>
+            @if (Model.EsNuevo)
+            {
+                <input asp-for="Datos.Codigo" class="form-control" maxlength="4" required />
+                <div class="form-text">1 a 4 letras o números.</div>
+            }
+            else
+            {
+                <input asp-for="Datos.Codigo" class="form-control" disabled />
+            }
+            <span asp-validation-for="Datos.Codigo" class="validador"></span>
+        </div>
+        <div class="col-sm-9 col-lg-6">
+            <label asp-for="Datos.Descripcion" class="form-label">Descripción</label>
+            <input asp-for="Datos.Descripcion" class="form-control" maxlength="300" required />
+            <span asp-validation-for="Datos.Descripcion" class="validador"></span>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <label asp-for="Datos.CategoriaId" class="form-label">Categoría</label>
+            <select asp-for="Datos.CategoriaId" class="form-select" required>
+                <option value="">Elegí una categoría</option>
+                @foreach (Categoria categoria in Model.Categorias)
+                {
+                    <option value="@categoria.Id" selected="@(categoria.Id == Model.Datos.CategoriaId)">@categoria.Descripcion@(categoria.Activa ? "" : " (inactiva)")</option>
+                }
+            </select>
+            <span asp-validation-for="Datos.CategoriaId" class="validador"></span>
+        </div>
+        <div class="col-6 col-sm-3 col-lg-2">
+            <label asp-for="Datos.Stock" class="form-label">Stock</label>
+            <input asp-for="Datos.Stock" type="number" min="0" class="form-control" required />
+            <span asp-validation-for="Datos.Stock" class="validador"></span>
+        </div>
+        <div class="col-6 col-sm-3 col-lg-2">
+            <label asp-for="Datos.Precio" class="form-label">Precio ($)</label>
+            <input asp-for="Datos.Precio" class="form-control" inputmode="decimal" required />
+            <span asp-validation-for="Datos.Precio" class="validador"></span>
+        </div>
+        <div class="col-lg-6">
+            <label asp-for="Datos.Imagen" class="form-label">Imagen</label>
+            <input asp-for="Datos.Imagen" class="form-control" maxlength="100" placeholder="~/Imagenes_ar/Gabinete/gb1.png" required />
+            <div class="form-text">Ruta del sitio (~/Imagenes_ar/...) o dirección https.</div>
+            <span asp-validation-for="Datos.Imagen" class="validador"></span>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label asp-for="Datos.Activo" class="form-label">Estado</label>
+            <select asp-for="Datos.Activo" class="form-select">
+                <option value="true">Activo</option>
+                <option value="false">Dado de baja</option>
+            </select>
+        </div>
+
+        <div class="col-12"><hr class="my-1" /><h2 class="h6 mt-2 mb-0">Detalle para el catálogo</h2></div>
+        <div class="col-sm-6 col-lg-4">
+            <label asp-for="Datos.Marca" class="form-label">Marca</label>
+            <input asp-for="Datos.Marca" class="form-control" maxlength="50" />
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label asp-for="Datos.GarantiaMeses" class="form-label">Garantía (meses)</label>
+            <input asp-for="Datos.GarantiaMeses" type="number" min="0" max="120" class="form-control" />
+            <span asp-validation-for="Datos.GarantiaMeses" class="validador"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Datos.DescripcionLarga" class="form-label">Descripción larga</label>
+            <textarea asp-for="Datos.DescripcionLarga" class="form-control" rows="3" maxlength="2000"></textarea>
+        </div>
+        <div class="col-12">
+            <label asp-for="Datos.Especificaciones" class="form-label">Especificaciones</label>
+            <textarea asp-for="Datos.Especificaciones" class="form-control font-monospace" rows="6" maxlength="4000" placeholder="Socket: AM4&#10;Núcleos / hilos: 8 / 16"></textarea>
+            <div class="form-text">Una por línea, con el formato <code>Clave: Valor</code>.</div>
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2 justify-content-end py-3">
+        <a class="btn btn-outline-secondary" asp-page="Index">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="btnGuardar">@(Model.EsNuevo ? "Agregar artículo" : "Guardar cambios")</button>
+    </div>
+</form>

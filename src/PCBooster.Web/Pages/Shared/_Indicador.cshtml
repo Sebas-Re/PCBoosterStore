@@ -1,0 +1,24 @@
+@model Indicador
+<div class="col">
+    <div class="card h-100 indicador">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-body-secondary small">@Model.Titulo</span>
+                <span class="icono rounded-3 d-flex align-items-center justify-content-center bg-@Model.Color-subtle text-@Model.Color"><i class="bi @Model.Icono"></i></span>
+            </div>
+            <div class="fs-3 fw-semibold lh-1 mb-2">@Model.Valor</div>
+            @if (Model.Variacion is decimal variacion)
+            {
+                bool sube = variacion >= 0;
+                <span class="badge rounded-pill @(sube ? "text-bg-success-subtle text-success-emphasis" : "text-bg-danger-subtle text-danger-emphasis")">
+                    <i class="bi @(sube ? "bi-arrow-up-right" : "bi-arrow-down-right")"></i> @variacion.ToString("+0.#;-0.#;0")%
+                </span>
+                <span class="text-body-secondary small">@Model.Comparacion</span>
+            }
+            else
+            {
+                <span class="text-body-secondary small">Sin datos del período anterior</span>
+            }
+        </div>
+    </div>
+</div>
