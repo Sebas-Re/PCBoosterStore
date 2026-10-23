@@ -7,8 +7,8 @@ métricas de e-commerce (ingresos, pedidos, ticket promedio, clientes nuevos, re
 ABM de artículos, categorías y usuarios.
 
 Es la reescritura del trabajo práctico integrador de Programación III (UTN), que estaba en ASP.NET WebForms sobre
-.NET Framework: [Sebas-Re/TPFINAL_Prog3](https://github.com/Sebas-Re/TPFINAL_Prog3). De ahí vienen el schema, los
-datos de prueba y el diseño con Bootstrap.
+.NET Framework: [Sebas-Re/TPFINAL_Prog3](https://github.com/Sebas-Re/TPFINAL_Prog3). De ahí vienen los datos de
+prueba y el diseño con Bootstrap.
 
 ## Cómo correrlo
 
@@ -20,7 +20,8 @@ dotnet run --project src/PCBooster.Web
 
 La primera vez, la app crea `src/PCBooster.Web/App_Data/PCbooster.db` con los datos de prueba y un historial de
 demo (20 clientes y unas 180 ventas de los últimos 6 meses, con fechas relativas al día en que se crea), para que el
-panel tenga qué mostrar. Para volver a empezar de cero, borrá ese archivo.
+panel tenga qué mostrar. Para volver a empezar de cero, borrá ese archivo. Para usar otra ruta, definí la variable
+de entorno `PCBOOSTER_DB`.
 
 | Usuario     | Contraseña | Rol           |
 |-------------|------------|---------------|
@@ -36,7 +37,7 @@ dotnet test
 
 | Proyecto              | Qué prueba                                                                             |
 |-----------------------|----------------------------------------------------------------------------------------|
-| `PCBooster.Tests`     | Mapeo de EF Core, triggers y migraciones de la base, y las reglas de negocio, contra un SQLite temporal |
+| `PCBooster.Tests`     | El schema y los datos de prueba, y las reglas de negocio, contra un SQLite temporal      |
 | `PCBooster.Web.Tests` | El sitio completo en memoria (`WebApplicationFactory`): login, compra, administración y seguridad |
 
 ## Estructura
@@ -44,7 +45,7 @@ dotnet test
 ```
 src/
   PCBooster.Dominio/   Entidades (Usuario, Articulo, Venta, Tarjeta...) y el carrito
-  PCBooster.Datos/     TiendaContext (EF Core), creación y migración de la base, hash de contraseñas, scripts SQL
+  PCBooster.Datos/     TiendaContext (EF Core), migraciones, datos de prueba (Sql/) y hash de contraseñas
   PCBooster.Negocio/   Servicios con las reglas y las consultas LINQ: usuarios, catálogo, tarjetas, compras, métricas
   PCBooster.Web/       Razor Pages, layouts, seguridad y recursos estáticos
 tests/
@@ -56,16 +57,22 @@ Las páginas solo hablan con los servicios de Negocio, que reciben el `TiendaCon
 
 ## Base de datos
 
-- El schema viene del proyecto original (SQL Server → MySQL → SQLite), con sus nombres de tabla y columna
-  (`Usuarios.Nombre_us`, `Articulos.Descripcion_ar`...). `TiendaContext` los mapea a entidades con nombres limpios
-  mediante Fluent API.
-- No se usan migraciones de EF: el schema y los datos están en [`src/PCBooster.Datos/Sql`](src/PCBooster.Datos/Sql),
-  embebidos en el ensamblado, y la versión se guarda en `PRAGMA user_version`. Al arrancar, la app crea la base o le
-  aplica los `migracion_N.sql` pendientes, así que también abre una base creada por el sitio WebForms.
-- El total de cada venta y el descuento de stock los hacen triggers de la base al insertar los detalles. La compra
-  completa (venta y detalles) va en una sola transacción.
-- Las métricas del panel son consultas LINQ (`GroupBy` por mes, día, categoría, producto y medio de pago) que EF
-  traduce a SQL. Los montos se mapean a `double` en SQLite para poder sumarlos en la base.
+- El schema lo definen las entidades y `TiendaContext` (índices únicos, `COLLATE NOCASE`, checks), y se crea con
+  las migraciones de EF Core de [`src/PCBooster.Datos/Migraciones`](src/PCBooster.Datos/Migraciones). Al arrancar,
+  la app aplica las pendientes y, si la base está vacía, carga los datos de prueba de
+  [`src/PCBooster.Datos/Sql`](src/PCBooster.Datos/Sql) (embebidos en el ensamblado).
+- Para cambiar el schema, modificá las entidades o `TiendaContext` y generá una migración:
+
+  ```
+  dotnet tool restore
+  dotnet ef migrations add NombreDelCambio --project src/PCBooster.Datos --output-dir Migraciones
+  ```
+
+- La compra completa (venta, detalles y descuento de stock) va en una sola transacción `BEGIN IMMEDIATE`: dos
+  compras simultáneas no pueden vender el mismo stock, y un check de la base impide que quede negativo.
+- Los listados y las métricas son consultas LINQ (`GroupBy` por mes, día, categoría, producto y medio de pago,
+  paginado con `Skip`/`Take`) que EF traduce a SQL. Los montos se guardan como `REAL` en SQLite para poder sumarlos
+  en la base.
 
 ## Seguridad
 
