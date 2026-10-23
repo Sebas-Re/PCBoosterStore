@@ -16,6 +16,7 @@ public partial class CatalogoModel(CatalogoService catalogo, CarritoSesion carri
     [BindProperty(SupportsGet = true)] public int Pagina { get; set; } = 1;
 
     public Pagina<Articulo> Articulos { get; private set; } = null!;
+    public Paginacion Paginacion { get; private set; } = null!;
     public List<Categoria> Categorias { get; private set; } = new();
     public Carrito Carrito { get; private set; } = new();
 
@@ -24,6 +25,7 @@ public partial class CatalogoModel(CatalogoService catalogo, CarritoSesion carri
         Q = Q?.Trim();
         Categorias = await catalogo.CategoriasActivasAsync();
         Articulos = await catalogo.BuscarAsync(Q, Cat, Pagina, ArticulosPorPagina);
+        Paginacion = Paginacion.De(Articulos, "/Catalogo", "pagina", Paginacion.Parametros(("cat", Cat), ("q", Q)), chica: false);
         Carrito = carritoSesion.Obtener();
     }
 

@@ -40,6 +40,3 @@ public record Indicador(string Titulo, string Valor, decimal? Variacion, string 
         new("Ticket promedio", c.Actual.TicketPromedio.ToString("C0"), Comparativa.Variacion(c.Actual.TicketPromedio, c.Anterior.TicketPromedio), "bi-receipt", "warning", comparacion),
     ];
 }
-
-/* Datos para el partial _Paginacion: página actual, total y la ruta de los links. */
-public record Paginacion(int Actual, int Total, string Pagina, string Parametro, IDictionary<string, string> Ruta);

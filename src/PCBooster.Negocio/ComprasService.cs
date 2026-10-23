@@ -13,6 +13,13 @@ public record ResultadoCompra(int IdVenta, string? Error)
 /* Fila del reporte de artículos vendidos. */
 public record ArticuloVendido(string Codigo, string Descripcion, int Unidades, decimal Total);
 
+public enum OrdenArticulosVendidos
+{
+    Codigo,
+    Unidades,
+    Recaudacion
+}
+
 public class ComprasService(TiendaContext db)
 {
     /* Registra la compra del carrito con una tarjeta guardada del usuario, en una
@@ -82,20 +89,34 @@ public class ComprasService(TiendaContext db)
     // ------------------------------------------------------------------------
     // Administración
     // ------------------------------------------------------------------------
-    public Task<List<Venta>> VentasAsync(int? usuarioId = null) =>
+    /* Ventas de la más reciente a la más vieja; con usuarioId, solo las de ese cliente. */
+    public Task<Pagina<Venta>> VentasAsync(int? usuarioId, int pagina, int tamañoPagina) =>
         db.Ventas.AsNoTracking().Include(v => v.Usuario)
             .Where(v => usuarioId == null || v.UsuarioId == usuarioId)
-            .OrderByDescending(v => v.Id).ToListAsync();
+            .OrderByDescending(v => v.Id).PaginarAsync(pagina, tamañoPagina);
 
-    /* Unidades y monto vendidos de cada artículo, en toda la historia. */
-    public async Task<List<ArticuloVendido>> ArticulosVendidosAsync()
+    /* Unidades y monto vendidos de cada artículo (o solo del código pedido), en toda la historia. */
+    public async Task<Pagina<ArticuloVendido>> ArticulosVendidosAsync(string? codigo, OrdenArticulosVendidos orden, int pagina, int tamañoPagina)
     {
-        // Se ordena sobre el tipo anónimo: EF no traduce un orden por propiedades de un record.
-        var filas = await db.DetallesVenta.AsNoTracking()
+        IQueryable<DetalleVenta> detalles = db.DetallesVenta.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(codigo))
+        {
+            codigo = codigo.Trim();
+            detalles = detalles.Where(d => d.ArticuloCodigo == codigo);
+        }
+        // Se ordena y pagina el tipo anónimo: EF no traduce un orden por propiedades de un record.
+        var filas = detalles
             .GroupBy(d => new { d.ArticuloCodigo, d.Articulo!.Descripcion })
-            .Select(g => new { g.Key.ArticuloCodigo, g.Key.Descripcion, Unidades = g.Sum(d => d.Cantidad), Total = g.Sum(d => d.Cantidad * d.PrecioUnitario) })
-            .OrderBy(f => f.ArticuloCodigo)
-            .ToListAsync();
-        return filas.Select(f => new ArticuloVendido(f.ArticuloCodigo, f.Descripcion, f.Unidades, f.Total)).ToList();
+            .Select(g => new { g.Key.ArticuloCodigo, g.Key.Descripcion, Unidades = g.Sum(d => d.Cantidad), Total = g.Sum(d => d.Cantidad * d.PrecioUnitario) });
+        var ordenadas = orden switch
+        {
+            OrdenArticulosVendidos.Unidades => filas.OrderByDescending(f => f.Unidades).ThenBy(f => f.ArticuloCodigo),
+            OrdenArticulosVendidos.Recaudacion => filas.OrderByDescending(f => f.Total).ThenBy(f => f.ArticuloCodigo),
+            _ => filas.OrderBy(f => f.ArticuloCodigo)
+        };
+        var resultado = await ordenadas.PaginarAsync(pagina, tamañoPagina);
+        return new Pagina<ArticuloVendido>(
+            resultado.Items.Select(f => new ArticuloVendido(f.ArticuloCodigo, f.Descripcion, f.Unidades, f.Total)).ToList(),
+            resultado.Total, resultado.Numero, resultado.TamañoPagina);
     }
 }

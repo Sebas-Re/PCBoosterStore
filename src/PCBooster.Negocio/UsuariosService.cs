@@ -170,8 +170,17 @@ public class UsuariosService(TiendaContext db)
     // ------------------------------------------------------------------------
     // Administración
     // ------------------------------------------------------------------------
-    public Task<List<Usuario>> ListarAsync(int? id = null) =>
-        db.Usuarios.AsNoTracking().Where(u => id == null || u.Id == id).OrderBy(u => u.Id).ToListAsync();
+    /* "filtro": parte del nombre o del e-mail. */
+    public Task<Pagina<Usuario>> BuscarAsync(int? id, string? filtro, int pagina, int tamañoPagina)
+    {
+        IQueryable<Usuario> consulta = db.Usuarios.AsNoTracking().Where(u => id == null || u.Id == id);
+        if (!string.IsNullOrWhiteSpace(filtro))
+        {
+            string patron = Consultas.Contiene(filtro);
+            consulta = consulta.Where(u => EF.Functions.Like(u.Nombre, patron, Consultas.Escape) || EF.Functions.Like(u.Email, patron, Consultas.Escape));
+        }
+        return consulta.OrderBy(u => u.Id).PaginarAsync(pagina, tamañoPagina);
+    }
 
     /* El admin no necesita la contraseña actual del usuario. */
     public async Task<string?> ModificarAsync(int id, string nombre, string email, string? telefono, bool esAdmin, bool activo, string? nuevaContraseña)

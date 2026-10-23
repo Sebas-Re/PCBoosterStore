@@ -28,11 +28,11 @@ public class ReportesModel(MetricasService metricas, ComprasService compras) : P
     public string GraficoPagos { get; private set; } = "";
     public List<ClienteDestacado> TopClientes { get; private set; } = new();
 
-    public List<Venta> Ventas { get; private set; } = new();
+    public IReadOnlyList<Venta> Ventas { get; private set; } = [];
     public Paginacion PaginacionVentas { get; private set; } = null!;
     public Venta? DetalleVenta { get; private set; }
 
-    public List<ArticuloVendido> ArticulosVendidos { get; private set; } = new();
+    public IReadOnlyList<ArticuloVendido> ArticulosVendidos { get; private set; } = [];
     public Paginacion PaginacionArticulos { get; private set; } = null!;
 
     public async Task OnGetAsync()
@@ -72,11 +72,10 @@ public class ReportesModel(MetricasService metricas, ComprasService compras) : P
 
     async Task CargarVentasAsync()
     {
-        List<Venta> todas = await compras.VentasAsync(Usuario);
-        int paginas = Math.Max(1, (int)Math.Ceiling(todas.Count / (double)VentasPorPagina));
-        Pv = Math.Clamp(Pv, 1, paginas);
-        Ventas = todas.Skip((Pv - 1) * VentasPorPagina).Take(VentasPorPagina).ToList();
-        PaginacionVentas = new Paginacion(Pv, paginas, "/Admin/Reportes", "pv", Ruta(sin: "pv"));
+        Pagina<Venta> ventas = await compras.VentasAsync(Usuario, Pv, VentasPorPagina);
+        Ventas = ventas.Items;
+        Pv = ventas.Numero;
+        PaginacionVentas = Paginacion.De(ventas, "/Admin/Reportes", "pv", Ruta(sin: "pv"));
         if (Venta != null)
         {
             DetalleVenta = await compras.DetalleAsync(Venta.Value);
@@ -85,22 +84,16 @@ public class ReportesModel(MetricasService metricas, ComprasService compras) : P
 
     async Task CargarArticulosVendidosAsync()
     {
-        IEnumerable<ArticuloVendido> filas = await compras.ArticulosVendidosAsync();
-        if (!string.IsNullOrWhiteSpace(Codigo))
+        OrdenArticulosVendidos orden = Orden switch
         {
-            filas = filas.Where(a => string.Equals(a.Codigo, Codigo.Trim(), StringComparison.OrdinalIgnoreCase));
-        }
-        filas = Orden switch
-        {
-            "unidades" => filas.OrderByDescending(a => a.Unidades),
-            "recaudacion" => filas.OrderByDescending(a => a.Total),
-            _ => filas.OrderBy(a => a.Codigo)
+            "unidades" => OrdenArticulosVendidos.Unidades,
+            "recaudacion" => OrdenArticulosVendidos.Recaudacion,
+            _ => OrdenArticulosVendidos.Codigo
         };
-        List<ArticuloVendido> lista = filas.ToList();
-        int paginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)ArticulosPorPagina));
-        Pa = Math.Clamp(Pa, 1, paginas);
-        ArticulosVendidos = lista.Skip((Pa - 1) * ArticulosPorPagina).Take(ArticulosPorPagina).ToList();
-        PaginacionArticulos = new Paginacion(Pa, paginas, "/Admin/Reportes", "pa", Ruta(sin: "pa"));
+        Pagina<ArticuloVendido> articulos = await compras.ArticulosVendidosAsync(Codigo, orden, Pa, ArticulosPorPagina);
+        ArticulosVendidos = articulos.Items;
+        Pa = articulos.Numero;
+        PaginacionArticulos = Paginacion.De(articulos, "/Admin/Reportes", "pa", Ruta(sin: "pa"));
     }
 
     /* Los parámetros actuales, para armar links que cambian solo uno. */

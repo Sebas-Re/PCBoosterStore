@@ -5,12 +5,6 @@ using PCBooster.Dominio;
 
 namespace PCBooster.Negocio;
 
-/* Una página de resultados. */
-public record Pagina<T>(IReadOnlyList<T> Items, int Total, int Numero, int TamañoPagina)
-{
-    public int TotalPaginas => Math.Max(1, (int)Math.Ceiling(Total / (double)TamañoPagina));
-}
-
 /* Artículos y categorías: lo que ve el cliente y la administración. */
 public partial class CatalogoService(TiendaContext db)
 {
@@ -40,28 +34,21 @@ public partial class CatalogoService(TiendaContext db)
 
     /* Artículos activos de categorías activas. La búsqueda (por descripción, sin
        distinguir mayúsculas) tiene prioridad sobre la categoría. */
-    public async Task<Pagina<Articulo>> BuscarAsync(string? busqueda, int? categoriaId, int pagina, int tamañoPagina)
+    public Task<Pagina<Articulo>> BuscarAsync(string? busqueda, int? categoriaId, int pagina, int tamañoPagina)
     {
         IQueryable<Articulo> consulta = db.Articulos.AsNoTracking().Include(a => a.Categoria)
             .Where(a => a.Activo && a.Categoria!.Activa);
 
         if (!string.IsNullOrWhiteSpace(busqueda))
         {
-            // LIKE de SQLite no distingue mayúsculas; % y _ del texto se escapan.
-            string patron = "%" + busqueda.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
-            consulta = consulta.Where(a => EF.Functions.Like(a.Descripcion, patron, "\\"));
+            string patron = Consultas.Contiene(busqueda);
+            consulta = consulta.Where(a => EF.Functions.Like(a.Descripcion, patron, Consultas.Escape));
         }
         else if (categoriaId != null)
         {
             consulta = consulta.Where(a => a.CategoriaId == categoriaId);
         }
-
-        int total = await consulta.CountAsync();
-        int totalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)tamañoPagina));
-        int numero = Math.Clamp(pagina, 1, totalPaginas);
-        List<Articulo> items = await consulta.OrderBy(a => a.CategoriaId).ThenBy(a => a.Codigo)
-            .Skip((numero - 1) * tamañoPagina).Take(tamañoPagina).ToListAsync();
-        return new Pagina<Articulo>(items, total, numero, tamañoPagina);
+        return consulta.OrderBy(a => a.CategoriaId).ThenBy(a => a.Codigo).PaginarAsync(pagina, tamañoPagina);
     }
 
     public Task<Articulo?> ObtenerAsync(string codigo) =>
@@ -73,10 +60,17 @@ public partial class CatalogoService(TiendaContext db)
     // ------------------------------------------------------------------------
     // Administración de artículos
     // ------------------------------------------------------------------------
-    public Task<List<Articulo>> ListarArticulosAsync(string? codigo = null) =>
-        db.Articulos.AsNoTracking().Include(a => a.Categoria)
-            .Where(a => string.IsNullOrEmpty(codigo) || a.Codigo == codigo)
-            .OrderBy(a => a.CategoriaId).ThenBy(a => a.Codigo).ToListAsync();
+    /* Todos los artículos, incluidos los dados de baja. "filtro": el código exacto o parte de la descripción. */
+    public Task<Pagina<Articulo>> ListarArticulosAsync(string? filtro, int pagina, int tamañoPagina)
+    {
+        IQueryable<Articulo> consulta = db.Articulos.AsNoTracking().Include(a => a.Categoria);
+        if (!string.IsNullOrWhiteSpace(filtro))
+        {
+            string codigo = filtro.Trim(), patron = Consultas.Contiene(filtro);
+            consulta = consulta.Where(a => a.Codigo == codigo || EF.Functions.Like(a.Descripcion, patron, Consultas.Escape));
+        }
+        return consulta.OrderBy(a => a.CategoriaId).ThenBy(a => a.Codigo).PaginarAsync(pagina, tamañoPagina);
+    }
 
     public async Task<string?> AgregarArticuloAsync(Articulo articulo)
     {

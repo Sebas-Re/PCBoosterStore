@@ -203,6 +203,18 @@ public class NegocioTests : BaseTemporal
         Assert.Contains("otra cuenta", await Usuarios().ModificarAsync(6, "Nom1", "ema2", "", false, true, null));
     }
 
+    [Fact]
+    public async Task ElAdminBuscaUsuariosPorNombreEmailOId()
+    {
+        Assert.Equal(["admAmador", "admDiamela", "admNicolas", "admSebasti"], (await Usuarios().BuscarAsync(null, "ADM", 1, 10)).Items.Select(u => u.Nombre));
+        Assert.Equal("Nom1", (await Usuarios().BuscarAsync(null, "ema1", 1, 10)).Items.Single().Nombre);
+        Assert.Equal("Nom2", (await Usuarios().BuscarAsync(6, null, 1, 10)).Items.Single().Nombre);
+
+        Pagina<Usuario> segunda = await Usuarios().BuscarAsync(null, null, 2, 5);
+        Assert.Equal(9, segunda.Total);
+        Assert.Equal([6, 7, 8, 9], segunda.Items.Select(u => u.Id));
+    }
+
     // ------------------------------------------------------------------------
     // Catálogo
     // ------------------------------------------------------------------------
@@ -230,6 +242,16 @@ public class NegocioTests : BaseTemporal
         Assert.Equal(12, segunda.Items.Count);
         Assert.Equal(6, segunda.TotalPaginas);
         Assert.Equal(6, (await Catalogo().BuscarAsync(null, null, 99, 12)).Numero); // fuera de rango: la última
+    }
+
+    [Fact]
+    public async Task LaAdministracionListaTambienLosArticulosDadosDeBaja()
+    {
+        await Catalogo().DarDeBajaArticuloAsync("gb1");
+
+        Assert.Equal(68, (await Catalogo().ListarArticulosAsync(null, 1, 100)).Total);
+        Assert.Equal("gb1", (await Catalogo().ListarArticulosAsync("GB1", 1, 10)).Items.Single().Codigo); // código exacto
+        Assert.Equal(9, (await Catalogo().ListarArticulosAsync("gabinete", 1, 10)).Total); // parte de la descripción
     }
 
     Articulo NuevoArticulo(string codigo, string imagen = "/img/productos/gb1.png") => new()
@@ -424,8 +446,18 @@ public class NegocioTests : BaseTemporal
 
         Assert.NotNull(await Compras().DetalleAsync(compra.IdVenta, 5));
         Assert.Null(await Compras().DetalleAsync(compra.IdVenta, 6));
-        ArticuloVendido gabinete = (await Compras().ArticulosVendidosAsync()).Single(a => a.Codigo == "gb1");
+    }
+
+    [Fact]
+    public async Task ElReporteDeArticulosVendidosFiltraYOrdena()
+    {
+        await Compras().ConfirmarAsync(5, CarritoConDosArticulos(), "Calle 123", "11", await TarjetaDe(5)); // 2 gb1 + 1 fnt1
+
+        ArticuloVendido gabinete = (await Compras().ArticulosVendidosAsync("GB1", OrdenArticulosVendidos.Codigo, 1, 10)).Items.Single();
         Assert.Equal(2, gabinete.Unidades);
         Assert.Equal(7000m, gabinete.Total);
+        Assert.Equal(["fnt1", "gb1"], (await Compras().ArticulosVendidosAsync(null, OrdenArticulosVendidos.Codigo, 1, 10)).Items.Select(a => a.Codigo));
+        Assert.Equal(["gb1", "fnt1"], (await Compras().ArticulosVendidosAsync(null, OrdenArticulosVendidos.Unidades, 1, 10)).Items.Select(a => a.Codigo));
+        Assert.Equal(["fnt1", "gb1"], (await Compras().ArticulosVendidosAsync(null, OrdenArticulosVendidos.Recaudacion, 1, 10)).Items.Select(a => a.Codigo));
     }
 }

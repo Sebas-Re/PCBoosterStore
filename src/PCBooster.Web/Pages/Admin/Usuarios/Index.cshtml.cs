@@ -15,23 +15,15 @@ public class IndexModel(UsuariosService usuarios) : PaginaBase
     [BindProperty(SupportsGet = true)] public string? Q { get; set; }
     [BindProperty(SupportsGet = true)] public int Pagina { get; set; } = 1;
 
-    public List<Usuario> Usuarios { get; private set; } = new();
+    public IReadOnlyList<Usuario> Usuarios { get; private set; } = [];
     public Paginacion Paginacion { get; private set; } = null!;
 
     public async Task OnGetAsync()
     {
-        List<Usuario> todos = await usuarios.ListarAsync(Id);
-        if (!string.IsNullOrWhiteSpace(Q))
-        {
-            string q = Q.Trim();
-            todos = todos.Where(u => u.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase) || u.Email.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-        int paginas = Math.Max(1, (int)Math.Ceiling(todos.Count / (double)PorPagina));
-        Pagina = Math.Clamp(Pagina, 1, paginas);
-        Usuarios = todos.Skip((Pagina - 1) * PorPagina).Take(PorPagina).ToList();
-        var ruta = new Dictionary<string, string>();
-        if (!string.IsNullOrWhiteSpace(Q)) ruta["q"] = Q;
-        Paginacion = new Paginacion(Pagina, paginas, "/Admin/Usuarios/Index", "pagina", ruta);
+        Pagina<Usuario> resultado = await usuarios.BuscarAsync(Id, Q, Pagina, PorPagina);
+        Usuarios = resultado.Items;
+        Pagina = resultado.Numero;
+        Paginacion = Paginacion.De(resultado, "/Admin/Usuarios/Index", "pagina", Paginacion.Parametros(("id", Id), ("q", Q)));
     }
 
     public async Task<IActionResult> OnPostDesactivarAsync(int usuarioId)

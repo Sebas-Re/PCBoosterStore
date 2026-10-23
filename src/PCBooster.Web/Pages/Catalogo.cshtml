@@ -139,26 +139,7 @@
             }
         </div>
 
-        @if (Model.Articulos.TotalPaginas > 1)
-        {
-            int actual = Model.Articulos.Numero, total = Model.Articulos.TotalPaginas;
-            <nav class="mt-4" aria-label="Páginas del catálogo">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item @(actual == 1 ? "disabled" : "")">
-                        <a class="page-link" asp-page="/Catalogo" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@(actual - 1)" aria-label="Anterior">&laquo;</a>
-                    </li>
-                    @for (int i = 1; i <= total; i++)
-                    {
-                        <li class="page-item @(i == actual ? "active" : "")">
-                            <a class="page-link" asp-page="/Catalogo" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@i">@i</a>
-                        </li>
-                    }
-                    <li class="page-item @(actual == total ? "disabled" : "")">
-                        <a class="page-link" asp-page="/Catalogo" asp-route-cat="@Model.Cat" asp-route-q="@Model.Q" asp-route-pagina="@(actual + 1)" aria-label="Siguiente">&raquo;</a>
-                    </li>
-                </ul>
-            </nav>
-        }
+        <partial name="_Paginacion" model="Model.Paginacion" />
     </div>
 
     <div class="col-lg-3">

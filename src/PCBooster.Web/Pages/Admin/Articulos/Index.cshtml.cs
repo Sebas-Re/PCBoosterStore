@@ -13,24 +13,15 @@ public class IndexModel(CatalogoService catalogo) : PaginaBase
     [BindProperty(SupportsGet = true)] public string? Q { get; set; }
     [BindProperty(SupportsGet = true)] public int Pagina { get; set; } = 1;
 
-    public List<Articulo> Articulos { get; private set; } = new();
+    public IReadOnlyList<Articulo> Articulos { get; private set; } = [];
     public Paginacion Paginacion { get; private set; } = null!;
 
     public async Task OnGetAsync()
     {
-        IEnumerable<Articulo> todos = await catalogo.ListarArticulosAsync();
-        if (!string.IsNullOrWhiteSpace(Q))
-        {
-            string q = Q.Trim();
-            todos = todos.Where(a => a.Codigo.Equals(q, StringComparison.OrdinalIgnoreCase) || a.Descripcion.Contains(q, StringComparison.OrdinalIgnoreCase));
-        }
-        List<Articulo> lista = todos.ToList();
-        int paginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PorPagina));
-        Pagina = Math.Clamp(Pagina, 1, paginas);
-        Articulos = lista.Skip((Pagina - 1) * PorPagina).Take(PorPagina).ToList();
-        var ruta = new Dictionary<string, string>();
-        if (!string.IsNullOrWhiteSpace(Q)) ruta["q"] = Q;
-        Paginacion = new Paginacion(Pagina, paginas, "/Admin/Articulos/Index", "pagina", ruta);
+        Pagina<Articulo> resultado = await catalogo.ListarArticulosAsync(Q, Pagina, PorPagina);
+        Articulos = resultado.Items;
+        Pagina = resultado.Numero;
+        Paginacion = Paginacion.De(resultado, "/Admin/Articulos/Index", "pagina", Paginacion.Parametros(("q", Q)));
     }
 
     public async Task<IActionResult> OnPostBajaAsync(string codigo)
